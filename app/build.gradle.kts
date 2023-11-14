@@ -1,6 +1,7 @@
 plugins {
     id("urlshortener.spring-app-conventions")
     kotlin("plugin.spring")
+    id("io.gitlab.arturbosch.detekt")
 }
 
 dependencies {
@@ -10,7 +11,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.webjars:bootstrap:${Version.BOOTSTRAP}")
     implementation("org.webjars:jquery:${Version.JQUERY}")
-
+    implementation("org.springdoc:springdoc-openapi-ui:1.7.0")
+    
     runtimeOnly("org.hsqldb:hsqldb")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
