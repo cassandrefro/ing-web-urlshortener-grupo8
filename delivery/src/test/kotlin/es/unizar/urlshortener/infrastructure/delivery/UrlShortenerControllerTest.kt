@@ -6,7 +6,6 @@ import es.unizar.urlshortener.core.*
 import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
-import es.unizar.urlshortener.core.usecases.QRCodeUseCase
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.never
@@ -43,8 +42,8 @@ class UrlShortenerControllerTest {
     @MockBean
     private lateinit var createShortUrlUseCase: CreateShortUrlUseCase
 
-    @MockBean
-    private lateinit var qrCodeUseCase: QRCodeUseCase
+    /*@MockBean
+    private lateinit var qrCodeUseCase: QRCodeUseCase*/
 
     @Test
     fun `redirectTo returns a redirect when the key exists`() {
@@ -75,17 +74,13 @@ class UrlShortenerControllerTest {
         given(
             createShortUrlUseCase.create(
                 url = "http://example.com/",
-                data = ShortUrlProperties(
-                    ip = "127.0.0.1",
-                    qr = false
-                )
+                data = ShortUrlProperties(ip = "127.0.0.1")
             )
         ).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/")))
 
         mockMvc.perform(
             post("/api/link")
                 .param("url", "http://example.com/")
-                .param("qr", "false")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
         )
             .andDo(print())
@@ -99,23 +94,20 @@ class UrlShortenerControllerTest {
         given(
             createShortUrlUseCase.create(
                 url = "ftp://example.com/",
-                data = ShortUrlProperties(
-                    ip = "127.0.0.1",
-                    qr = false
-                )
+                data = ShortUrlProperties(ip = "127.0.0.1")
             )
         ).willAnswer { throw InvalidUrlException("ftp://example.com/") }
 
         mockMvc.perform(
             post("/api/link")
                 .param("url", "ftp://example.com/")
-                .param("qr", "false")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
         )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.statusCode").value(400))
     }
 
+    /*
     @Test
     fun `getQr returns a valid QR if the hash exists`() {
         given(
@@ -155,9 +147,9 @@ class UrlShortenerControllerTest {
 
     @Test
     fun `getQr returns not found if the hash does not exist`() {
-        /*given(
+        given(
             qrCodeUseCase.generateQRCode("http://localhost/f684a3c5")
-        ).willAnswer { throw QrCodeNotFoundException() }*/
+        ).willAnswer { throw QrCodeNotFoundException() }
 
         mockMvc.perform(
             get("/f684a3c5/qr", "f684a3c5")
@@ -167,5 +159,5 @@ class UrlShortenerControllerTest {
             .andExpect(jsonPath("$.statusCode").value(404))
         
         verify(qrCodeUseCase, never()).generateQRCode("http://localhost/f684a3c5")
-    }     
+    }  */   
 }

@@ -47,5 +47,5 @@ class ApplicationConfiguration(
         CreateShortUrlUseCaseImpl(shortUrlRepositoryService(), validatorService(), hashService())
 
     @Bean
-    fun qrCodeUseCase() = QRCodeUseCaseImpl() 
+    fun qrCodeUseCase() = QRCodeUseCaseImpl(shortUrlRepositoryService()) 
 }

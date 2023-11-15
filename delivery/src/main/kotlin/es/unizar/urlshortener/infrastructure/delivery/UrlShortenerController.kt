@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
+// import alert
+
 
 /**
  * The specification of the controller.
@@ -75,7 +77,7 @@ class UrlShortenerControllerImpl(
     val logClickUseCase: LogClickUseCase,
     val createShortUrlUseCase: CreateShortUrlUseCase,
     val qrCodeUseCase: QRCodeUseCase,
-    private val shortUrlRepository: ShortUrlRepositoryService,
+    val shortUrlRepository: ShortUrlRepositoryService
 ) : UrlShortenerController {
 
     @GetMapping("/{id:(?!api|index).*}")
@@ -117,12 +119,24 @@ class UrlShortenerControllerImpl(
     @GetMapping("/{id}/qr", produces = [MediaType.IMAGE_PNG_VALUE])
     override fun getQr(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray> {
         val shortUrl = shortUrlRepository.findByKey(id)
-        return shortUrl?.let {
-            val completeUrl = request.requestURL.toString().replace("/qr", "")
-            val qrCodeImage = qrCodeUseCase.generateQRCode(completeUrl) // Use qrCodeUseCase here
-            val h = HttpHeaders()
-            h.contentType = MediaType.IMAGE_PNG
-            ResponseEntity(qrCodeImage, h, HttpStatus.OK)
-        } ?: ResponseEntity.notFound().build()   
+
+        if(shortUrl == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+        } else {
+            //if(shortUrl.properties.qr == false || shortUrl.properties.qr == null) {
+              //  println("QR code not found")
+                //return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+           // } else {
+                //val baseUrl = request.requestURL.substring(0, request.requestURL.indexOf(request.requestURI))
+                //val shortenedUrl = baseUrl + "/" + id
+                val completeUrl = request.requestURL.toString().replace("/qr", "")
+
+                var qrCodeImage = qrCodeUseCase.generateQRCode(completeUrl)
+                //val headers = HttpHeaders().apply { contentType = MediaType.IMAGE_PNG }
+                val h = HttpHeaders()
+                h.contentType = MediaType.IMAGE_PNG
+                return ResponseEntity(qrCodeImage, h, HttpStatus.OK)
+           // }
+        }   
     }
 }
