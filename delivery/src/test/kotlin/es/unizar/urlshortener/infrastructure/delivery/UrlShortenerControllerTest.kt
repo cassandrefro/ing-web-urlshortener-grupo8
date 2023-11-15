@@ -54,6 +54,20 @@ class UrlShortenerControllerTest {
     }
 
     @Test
+    fun `redirectTo returns forbidden if the key exists but destination URI is not secure`() {
+        given(redirectUseCase.redirectTo("key"))
+            .willAnswer { throw RedirectUnsafeException() }
+
+        mockMvc.perform(get("/{id}", "key"))
+            .andDo(print())
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.statusCode").value(403))
+
+        verify(logClickUseCase, never()).logClick("key", ClickProperties(ip = "127.0.0.1"))
+    }
+
+
+    @Test
     fun `redirectTo returns a not found when the key does not exist`() {
         given(redirectUseCase.redirectTo("key"))
             .willAnswer { throw RedirectionNotFound("key") }

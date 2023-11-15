@@ -4,6 +4,8 @@ import com.google.common.hash.Hashing
 import es.unizar.urlshortener.core.HashService
 import es.unizar.urlshortener.core.ValidatorService
 import org.apache.commons.validator.routines.UrlValidator
+import java.net.HttpURLConnection
+import java.net.URL
 import java.nio.charset.StandardCharsets
 
 /**
@@ -11,6 +13,20 @@ import java.nio.charset.StandardCharsets
  */
 class ValidatorServiceImpl : ValidatorService {
     override fun isValid(url: String) = urlValidator.isValid(url)
+
+    override fun isReachable(url: String) : Boolean {
+        
+        //val url = URL("http://www.example.com")
+        val connection: HttpURLConnection = URL(url).openConnection() as HttpURLConnection
+
+        //disables automatic following of redirects
+        connection.setInstanceFollowRedirects(false)
+
+        val responseCode: Int = connection.getResponseCode()
+
+        //Checking if the Response Code is HTTP_OK
+        return responseCode.equals(HttpURLConnection.HTTP_OK)
+    }
 
     companion object {
         val urlValidator = UrlValidator(arrayOf("http", "https"))
