@@ -3,6 +3,7 @@
 package es.unizar.urlshortener.core.usecases
 
 import es.unizar.urlshortener.core.*
+import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 
 /**
  * Given an url returns the key that is used to create a short URL.
@@ -31,7 +32,8 @@ class CreateShortUrlUseCaseImpl(
                 properties = ShortUrlProperties(
                     safe = data.safe,
                     ip = data.ip,
-                    sponsor = data.sponsor
+                    sponsor = data.sponsor,
+                    qr = data.qr
                 )
             )
             shortUrlRepository.save(su)

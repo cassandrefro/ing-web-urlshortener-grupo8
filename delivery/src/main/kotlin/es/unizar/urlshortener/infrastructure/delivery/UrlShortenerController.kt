@@ -5,6 +5,8 @@ import es.unizar.urlshortener.core.ShortUrlProperties
 import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
+import es.unizar.urlshortener.core.usecases.QRCodeUseCase
+import es.unizar.urlshortener.core.ShortUrlRepositoryService
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.HttpHeaders
@@ -35,6 +37,13 @@ interface UrlShortenerController {
      * **Note**: Delivery of use case [CreateShortUrlUseCase].
      */
     fun shortener(data: ShortUrlDataIn, request: HttpServletRequest): ResponseEntity<ShortUrlDataOut>
+
+    /**
+     * Returns a QR code for the short url identified by its [id].
+     *
+     * **Note**: Delivery of use case [QRCodeUseCase].
+     */
+    fun getQr(id: String, request: HttpServletRequest): ResponseEntity<ByteArray>
 }
 
 /**
@@ -42,7 +51,8 @@ interface UrlShortenerController {
  */
 data class ShortUrlDataIn(
     val url: String,
-    val sponsor: String? = null
+    val sponsor: String? = null,
+    val qr: Boolean? = null
 )
 
 /**
@@ -50,7 +60,8 @@ data class ShortUrlDataIn(
  */
 data class ShortUrlDataOut(
     val url: URI? = null,
-    val properties: Map<String, Any> = emptyMap()
+    val properties: Map<String, Any> = emptyMap(),
+    val qr: String? = null
 )
 
 /**
@@ -62,7 +73,9 @@ data class ShortUrlDataOut(
 class UrlShortenerControllerImpl(
     val redirectUseCase: RedirectUseCase,
     val logClickUseCase: LogClickUseCase,
-    val createShortUrlUseCase: CreateShortUrlUseCase
+    val createShortUrlUseCase: CreateShortUrlUseCase,
+    val qrCodeUseCase: QRCodeUseCase,
+    private val shortUrlRepository: ShortUrlRepositoryService,
 ) : UrlShortenerController {
 
     @GetMapping("/{id:(?!api|index).*}")
@@ -86,12 +99,30 @@ class UrlShortenerControllerImpl(
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
+            val qrUrl = if (data.qr == true) {
+                url.toString() + "/qr"                
+            } else {
+                null
+            }
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
                     "safe" to it.properties.safe
-                )
+                ),
+                qr = qrUrl
             )
             ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)
         }
+    
+    @GetMapping("/{id}/qr", produces = [MediaType.IMAGE_PNG_VALUE])
+    override fun getQr(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray> {
+        val shortUrl = shortUrlRepository.findByKey(id)
+        return shortUrl?.let {
+            val completeUrl = request.requestURL.toString().replace("/qr", "")
+            val qrCodeImage = qrCodeUseCase.generateQRCode(completeUrl) // Use qrCodeUseCase here
+            val h = HttpHeaders()
+            h.contentType = MediaType.IMAGE_PNG
+            ResponseEntity(qrCodeImage, h, HttpStatus.OK)
+        } ?: ResponseEntity.notFound().build()   
+    }
 }
