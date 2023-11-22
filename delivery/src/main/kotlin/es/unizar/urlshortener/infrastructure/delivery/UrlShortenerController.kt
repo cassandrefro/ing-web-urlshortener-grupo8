@@ -95,17 +95,14 @@ class UrlShortenerControllerImpl(
             url = data.url,
             data = ShortUrlProperties(
                 ip = request.remoteAddr,
-                sponsor = data.sponsor
+                sponsor = data.sponsor,
+                qr = data.qr
             )
         ).let {
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
-            val qrUrl = if (data.qr == true) {
-                url.toString() + "/qr"                
-            } else {
-                null
-            }
+            val qrUrl = if (data.qr) "$url/qr" else null 
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
@@ -118,7 +115,7 @@ class UrlShortenerControllerImpl(
     
     @GetMapping("/{id}/qr", produces = [MediaType.IMAGE_PNG_VALUE])
     override fun getQr(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray> {
-        val shortUrl = shortUrlRepository.findByKey(id)
+        val shortUrl = shortUrlRepository.findByKey(id) ?: throw RedirectionNotFound(id)
 
         if(shortUrl == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
@@ -129,6 +126,8 @@ class UrlShortenerControllerImpl(
            // } else {
                 //val baseUrl = request.requestURL.substring(0, request.requestURL.indexOf(request.requestURI))
                 //val shortenedUrl = baseUrl + "/" + id
+            val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it, null) }.toUri()
+
                 val completeUrl = request.requestURL.toString().replace("/qr", "")
 
                 var qrCodeImage = qrCodeUseCase.generateQRCode(completeUrl)
