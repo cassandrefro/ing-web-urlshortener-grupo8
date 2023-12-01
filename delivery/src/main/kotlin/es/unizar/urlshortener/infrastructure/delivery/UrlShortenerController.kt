@@ -49,8 +49,6 @@ interface UrlShortenerController {
      * **Note**: Delivery of use cases [RedirectUseCase] and [LogClickUseCase].
      */
     fun redirectToInterstitial(@PathVariable id: String, request: HttpServletRequest, response: HttpServletResponse): ModelAndView
-
-    fun getRedirect(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Unit>
 }
 
 
@@ -109,21 +107,14 @@ class UrlShortenerControllerImpl(
     override fun redirectToInterstitial(@PathVariable id: String, request: HttpServletRequest, response: HttpServletResponse): ModelAndView {
         val modelAndView = ModelAndView()
         modelAndView.viewName = "interstitial"
-        val originUrl = request.requestURL.toString().replace("interstitial/$id","")
-        modelAndView.addObject("url", originUrl + "getRedirect/$id")
-        val headerValue = CacheControl.maxAge(12, TimeUnit.HOURS).headerValue
-        response.addHeader(HttpHeaders.CACHE_CONTROL, headerValue)
-        return modelAndView
-    }
-
-    @GetMapping("/getRedirect/{id}")
-    override fun getRedirect(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Unit> =
         redirectUseCase.redirectTo(id).let {
-            logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
-            val h = HttpHeaders()
-            h.location = URI.create(it.target)
-            ResponseEntity<Unit>(h, HttpStatus.valueOf(it.mode))
+            modelAndView.addObject("url", it.target)
+            val headerValue = CacheControl.maxAge(12, TimeUnit.HOURS).headerValue
+            response.addHeader(HttpHeaders.CACHE_CONTROL, headerValue)
+            return modelAndView
         }
+
+    }
 
     @PostMapping("/api/link", consumes = [MediaType.APPLICATION_FORM_URLENCODED_VALUE])
     override fun shortener(data: ShortUrlDataIn, request: HttpServletRequest): ResponseEntity<ShortUrlDataOut> =
