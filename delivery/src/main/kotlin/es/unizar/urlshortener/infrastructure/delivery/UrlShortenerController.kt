@@ -45,7 +45,7 @@ interface UrlShortenerController {
      *
      * **Note**: Delivery of use cases [RedirectUseCase] and [LogClickUseCase].
      */
-    fun redirectToPrueba(id: String, request: HttpServletRequest): ModelAndView
+    fun redirectToInterstitial(id: String, request: HttpServletRequest): ModelAndView
 
     fun getRedirect(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Unit>
 }
@@ -88,8 +88,9 @@ class UrlShortenerControllerImpl(
         val shortUrl = shortUrlRepository.findByKey(id) ?: throw RedirectionNotFound(id)
         return if (shortUrl.properties.interstitial == true) {
             val h = HttpHeaders()
-            h.location = URI.create("http://localhost:8080/interstitial/$id")
-            ResponseEntity<Unit>(h, HttpStatus.PERMANENT_REDIRECT)
+            val originUrl = request.requestURL.toString().replace(id,"")
+            h.location = URI.create(originUrl + "interstitial/$id")
+            ResponseEntity<Unit>(h, HttpStatus.TEMPORARY_REDIRECT)
         } else {
             redirectUseCase.redirectTo(id).let {
                 logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
@@ -102,10 +103,11 @@ class UrlShortenerControllerImpl(
 
 
     @GetMapping("/interstitial/{id}")
-    override fun redirectToPrueba(@PathVariable id: String, request: HttpServletRequest): ModelAndView {
+    override fun redirectToInterstitial(@PathVariable id: String, request: HttpServletRequest): ModelAndView {
         val modelAndView = ModelAndView()
         modelAndView.viewName = "interstitial"
-        modelAndView.addObject("url", "http://localhost:8080/getRedirect/$id")
+        val originUrl = request.requestURL.toString().replace("interstitial/$id","")
+        modelAndView.addObject("url", originUrl + "getRedirect/$id")
         return modelAndView
     }
 
