@@ -8,7 +8,9 @@ import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.hateoas.server.mvc.linkTo
+import org.springframework.http.CacheControl
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.ModelAndView
 import java.net.URI
+import java.util.concurrent.TimeUnit
 
 
 /**
@@ -45,7 +48,7 @@ interface UrlShortenerController {
      *
      * **Note**: Delivery of use cases [RedirectUseCase] and [LogClickUseCase].
      */
-    fun redirectToInterstitial(id: String, request: HttpServletRequest): ModelAndView
+    fun redirectToInterstitial(@PathVariable id: String, request: HttpServletRequest, response: HttpServletResponse): ModelAndView
 
     fun getRedirect(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Unit>
 }
@@ -103,11 +106,13 @@ class UrlShortenerControllerImpl(
 
 
     @GetMapping("/interstitial/{id}")
-    override fun redirectToInterstitial(@PathVariable id: String, request: HttpServletRequest): ModelAndView {
+    override fun redirectToInterstitial(@PathVariable id: String, request: HttpServletRequest, response: HttpServletResponse): ModelAndView {
         val modelAndView = ModelAndView()
         modelAndView.viewName = "interstitial"
         val originUrl = request.requestURL.toString().replace("interstitial/$id","")
         modelAndView.addObject("url", originUrl + "getRedirect/$id")
+        val headerValue = CacheControl.maxAge(12, TimeUnit.HOURS).headerValue
+        response.addHeader(HttpHeaders.CACHE_CONTROL, headerValue)
         return modelAndView
     }
 
