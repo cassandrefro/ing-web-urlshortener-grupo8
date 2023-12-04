@@ -86,6 +86,18 @@ class UrlShortenerControllerImpl(
 
     @GetMapping("/{id:(?!api|index).*}")
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Unit> {
+        val (redirection, banner) = redirectUseCase.redirectTo(id)
+        return if (banner)  {
+            val h = HttpHeaders()
+            h.location = URI.create(redirection.target)
+            ResponseEntity<Unit>(h, HttpStatus.valueOf(redirection.mode))
+        } else {
+            logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
+            val h = HttpHeaders()
+            h.location = URI.create(redirection.target)
+            ResponseEntity<Unit>(h, HttpStatus.valueOf(redirection.mode))
+        }
+        /*
         val shortUrl = shortUrlRepository.findByKey(id) ?: throw RedirectionNotFound(id)
         return if (shortUrl.properties.interstitial == true) {
             val h = HttpHeaders()
@@ -93,19 +105,29 @@ class UrlShortenerControllerImpl(
             h.location = URI.create(originUrl + "interstitial/$id")
             ResponseEntity<Unit>(h, HttpStatus.TEMPORARY_REDIRECT)
         } else {
-            redirectUseCase.redirectTo(id).let {
+            val (redirection, banner) = redirectUseCase.redirectTo(id)
+            if (banner)  {
+                val h = HttpHeaders()
+                h.location = URI.create(redirection.target)
+                return ResponseEntity<Unit>(h, HttpStatus.valueOf(redirection.mode))
+            }
+            else {
                 logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
                 val h = HttpHeaders()
-                h.location = URI.create(it.target)
-                ResponseEntity<Unit>(h, HttpStatus.valueOf(it.mode))
+                h.location = URI.create(redirection.target)
+                return ResponseEntity<Unit>(h, HttpStatus.valueOf(redirection.mode))
             }
         }
+
+         */
     }
 
 
     @GetMapping("/interstitial/{id}")
     override fun redirectToInterstitial(@PathVariable id: String, request: HttpServletRequest, response: HttpServletResponse): ModelAndView {
         val modelAndView = ModelAndView()
+        TODO()
+        /*
         modelAndView.viewName = "interstitial"
         redirectUseCase.redirectTo(id).let {
             modelAndView.addObject("url", it.target)
@@ -113,6 +135,7 @@ class UrlShortenerControllerImpl(
             response.addHeader(HttpHeaders.CACHE_CONTROL, headerValue)
             return modelAndView
         }
+         */
 
     }
 
