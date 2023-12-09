@@ -103,6 +103,32 @@ class UrlShortenerControllerTest {
     }
 
     @Test
+    fun `creates returns a redirect with interstitial if it's asked for it`() {
+        given(
+            createShortUrlUseCase.create(
+                url = "http://example.com/",
+                data = ShortUrlProperties(ip = "127.0.0.1",
+                                        interstitial = true)
+            )
+        ).willReturn(ShortUrl("f684a3c4",
+                            Redirection("http://example.com/"),
+                            properties = ShortUrlProperties(interstitial = true)
+        ))
+
+        mockMvc.perform(
+            post("/api/link")
+                .param("url", "http://example.com/")
+                .param("interstitial", "true")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+        )
+            .andDo(print())
+            .andExpect(status().isCreated)
+            .andExpect(redirectedUrl("http://localhost/f684a3c4"))
+            .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
+            .andExpect(jsonPath("$.properties.interstitial").value(true))
+    }
+
+    @Test
     fun `creates returns bad request if it can compute a hash`() {
         given(
             createShortUrlUseCase.create(

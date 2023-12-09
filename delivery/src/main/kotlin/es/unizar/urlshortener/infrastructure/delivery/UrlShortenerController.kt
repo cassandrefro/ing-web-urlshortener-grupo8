@@ -69,7 +69,6 @@ data class ShortUrlDataIn(
 data class ShortUrlDataOut(
     val url: URI? = null,
     val properties: Map<String, Any> = emptyMap(),
-    val interstitial: Boolean?
 )
 
 const val INTERSTITIAL_CACHE_HOURS: Long = 12
@@ -127,9 +126,9 @@ class UrlShortenerControllerImpl(
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
-                    "safe" to it.properties.safe
+                    "safe" to it.properties.safe,
+                    "interstitial" to (it.properties.interstitial == true)
                 ),
-                interstitial = data.interstitial
             )
             ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)
         }
