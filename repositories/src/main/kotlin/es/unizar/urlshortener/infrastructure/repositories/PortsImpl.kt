@@ -12,6 +12,14 @@ class ClickRepositoryServiceImpl(
     private val clickEntityRepository: ClickEntityRepository
 ) : ClickRepositoryService {
     override fun save(cl: Click): Click = clickEntityRepository.save(cl.toEntity()).toDomain()
+    override fun count(): Long = clickEntityRepository.count()
+
+    /*
+    override fun countInterstitial(): Long {
+        // Example
+        val click : Click = Click()
+    }
+     */
 }
 
 /**
