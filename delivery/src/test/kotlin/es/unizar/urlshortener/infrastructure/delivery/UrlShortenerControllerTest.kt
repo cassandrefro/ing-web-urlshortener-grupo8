@@ -5,6 +5,7 @@ package es.unizar.urlshortener.infrastructure.delivery
 import es.unizar.urlshortener.core.*
 import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
+import es.unizar.urlshortener.core.usecases.Redirect
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -44,11 +45,26 @@ class UrlShortenerControllerTest {
 
     @Test
     fun `redirectTo returns a redirect when the key exists`() {
-        given(redirectUseCase.redirectTo("key")).willReturn(Redirection("http://example.com/"))
+        given(redirectUseCase.redirectTo("key")).
+            willReturn(Redirect(Redirection("http://example.com/"), false))
 
         mockMvc.perform(get("/{id}", "key"))
             .andExpect(status().isTemporaryRedirect)
             .andExpect(redirectedUrl("http://example.com/"))
+
+        verify(logClickUseCase).logClick("key", ClickProperties(ip = "127.0.0.1"))
+    }
+
+    @Test
+    fun `redirectTo returns an interstitial page when the key exist and has interstitial`() {
+        given(redirectUseCase.redirectTo("key")).
+            willReturn(Redirect(Redirection("http://example.com/"), true))
+
+        mockMvc.perform(get("/{id}", "key"))
+            .andDo(print())
+            .andExpect(status().isOk)
+            .andExpect(view().name("interstitial"))
+            .andExpect(model().attribute("url", "http://example.com/"))
 
         verify(logClickUseCase).logClick("key", ClickProperties(ip = "127.0.0.1"))
     }
@@ -84,6 +100,32 @@ class UrlShortenerControllerTest {
             .andExpect(status().isCreated)
             .andExpect(redirectedUrl("http://localhost/f684a3c4"))
             .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
+    }
+
+    @Test
+    fun `creates returns a redirect with interstitial if it's asked for it`() {
+        given(
+            createShortUrlUseCase.create(
+                url = "http://example.com/",
+                data = ShortUrlProperties(ip = "127.0.0.1",
+                                        interstitial = true)
+            )
+        ).willReturn(ShortUrl("f684a3c4",
+                            Redirection("http://example.com/"),
+                            properties = ShortUrlProperties(interstitial = true)
+        ))
+
+        mockMvc.perform(
+            post("/api/link")
+                .param("url", "http://example.com/")
+                .param("interstitial", "true")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+        )
+            .andDo(print())
+            .andExpect(status().isCreated)
+            .andExpect(redirectedUrl("http://localhost/f684a3c4"))
+            .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
+            .andExpect(jsonPath("$.properties.interstitial").value(true))
     }
 
     @Test
