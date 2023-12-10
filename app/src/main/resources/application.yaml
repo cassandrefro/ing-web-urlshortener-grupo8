@@ -7,3 +7,20 @@ spring:
     driverClassName: org.hsqldb.jdbc.JDBCDriver
   jpa:
     open-in-view: false
+management:
+  metrics:
+    enable:
+      hikaricp: false
+      jdbc: false
+      jvm: false
+      process: false
+      system: false
+      tomcat: false
+  endpoints:
+    web:
+      # primeramente están habilitadas todas las métricas excepto las variables de entorno
+      exposure:
+        # include: "beans, health, info, metrics, mappings, shutdown, interstitial-visits-counter"
+        include: "*"
+      # cambio del path de /actuator a /api/stats
+      base-path: /api/stats
