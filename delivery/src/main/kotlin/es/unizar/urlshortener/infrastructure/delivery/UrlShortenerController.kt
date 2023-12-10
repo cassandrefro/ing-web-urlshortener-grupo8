@@ -6,16 +6,15 @@ import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
 import jakarta.servlet.http.HttpServletRequest
-import org.springframework.boot.actuate.endpoint.annotation.Endpoint
-import org.springframework.boot.actuate.endpoint.annotation.ReadOperation
-import org.springframework.context.annotation.Bean
 import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.stereotype.Component
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PathVariable
 import java.net.URI
 
 /**
@@ -63,12 +62,17 @@ data class ShortUrlDataOut(
 class UrlShortenerControllerImpl(
     val redirectUseCase: RedirectUseCase,
     val logClickUseCase: LogClickUseCase,
-    val createShortUrlUseCase: CreateShortUrlUseCase
+    val createShortUrlUseCase: CreateShortUrlUseCase,
+    val interstitialCountController: InterstitialCountController,
+    val qrUrlsUsedCountController: QRUrlsUsedCountController,
+    val redirectionsExecutedCountController: RedirectionsExecutedCountController,
+    val urlsShortenedCountController: UrlsShortenedCountController
 ) : UrlShortenerController {
 
     @GetMapping("/{id:(?!api|index).*}")
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Unit> =
         redirectUseCase.redirectTo(id).let {
+            redirectionsExecutedCountController.incrementCounter();
             logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
             val h = HttpHeaders()
             h.location = URI.create(it.target)
@@ -84,6 +88,7 @@ class UrlShortenerControllerImpl(
                 sponsor = data.sponsor
             )
         ).let {
+            urlsShortenedCountController.incrementCounter();
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url

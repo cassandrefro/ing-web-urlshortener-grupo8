@@ -8,6 +8,14 @@ spring:
   jpa:
     open-in-view: false
 management:
+  metrics:
+    enable:
+      hikaricp: false
+      jdbc: false
+      jvm: false
+      process: false
+      system: false
+      tomcat: false
   endpoints:
     web:
       # primeramente están habilitadas todas las métricas excepto las variables de entorno
