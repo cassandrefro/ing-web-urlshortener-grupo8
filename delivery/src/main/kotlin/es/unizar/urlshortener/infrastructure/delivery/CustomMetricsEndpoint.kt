@@ -6,14 +6,10 @@ import org.springframework.web.bind.annotation.RestController
 
 
 @RestController
-public class InterstitialCountController(registry: MeterRegistry?) {
-    private val interstitialCounter: Counter
-
-    init {
-        interstitialCounter = Counter.builder("interstitial-visits-counter")
-            .description("Counts interstitial visits")
-            .register(registry);
-    }
+class InterstitialCountController(registry: MeterRegistry) {
+    private val interstitialCounter: Counter = Counter.builder("interstitial-visits-counter")
+        .description("Counts interstitial visits")
+        .register(registry)
 
     fun incrementCounter() {
         interstitialCounter.increment()
@@ -21,14 +17,11 @@ public class InterstitialCountController(registry: MeterRegistry?) {
 }
 
 @RestController
-public class QRUrlsUsedCountController(registry: MeterRegistry?) {
-    private val qrUsedCounter: Counter
+class QRUrlsUsedCountController(registry: MeterRegistry) {
+    private val qrUsedCounter: Counter = Counter.builder("qr-urls-used-counter")
+        .description("Counts the number of urls with qr codes used")
+        .register(registry)
 
-    init {
-        qrUsedCounter = Counter.builder("qr-urls-used-counter")
-            .description("Counts the number of urls with qr codes used")
-            .register(registry);
-    }
 
     fun incrementCounter() {
         qrUsedCounter.increment()
@@ -36,14 +29,10 @@ public class QRUrlsUsedCountController(registry: MeterRegistry?) {
 }
 
 @RestController
-public class RedirectionsExecutedCountController(registry: MeterRegistry?) {
-    private val redirectionsCounter: Counter
-
-    init {
-        redirectionsCounter = Counter.builder("redirections-executed-counter")
-            .description("Counts the number of redirections executed using our url shortener")
-            .register(registry);
-    }
+class RedirectionsExecutedCountController(registry: MeterRegistry) {
+    private val redirectionsCounter: Counter = Counter.builder("redirections-executed-counter")
+        .description("Counts the number of redirections executed using our url shortener")
+        .register(registry)
 
     fun incrementCounter() {
         redirectionsCounter.increment()
@@ -51,14 +40,10 @@ public class RedirectionsExecutedCountController(registry: MeterRegistry?) {
 }
 
 @RestController
-public class UrlsShortenedCountController(registry: MeterRegistry?) {
-    private val urlsShortenedCounter: Counter
-
-    init {
-        urlsShortenedCounter = Counter.builder("urls-shortened-counter")
-            .description("Counts the number of urls shortened using our url shortener")
-            .register(registry);
-    }
+class UrlsShortenedCountController(registry: MeterRegistry) {
+    private val urlsShortenedCounter: Counter = Counter.builder("urls-shortened-counter")
+        .description("Counts the number of urls shortened using our url shortener")
+        .register(registry)
 
     fun incrementCounter() {
         urlsShortenedCounter.increment()

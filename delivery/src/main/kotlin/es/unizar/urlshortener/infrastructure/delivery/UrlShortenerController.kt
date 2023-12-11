@@ -16,7 +16,6 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -125,7 +124,7 @@ class UrlShortenerControllerImpl(
                 interstitial = data.interstitial
             )
         ).let {
-            urlsShortenedCountController.incrementCounter();
+            urlsShortenedCountController.incrementCounter()
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
