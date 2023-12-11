@@ -1,118 +1,41 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
-import jakarta.websocket.*
-import jakarta.websocket.server.ServerEndpoint
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.task.TaskExecutor
-import org.springframework.stereotype.Component
-import org.springframework.stereotype.Repository
-import org.springframework.web.socket.server.standard.ServerEndpointExporter
-import java.util.*
+import org.springframework.web.socket.TextMessage
+import org.springframework.web.socket.WebSocketHandler
+import org.springframework.web.socket.WebSocketSession
+import org.springframework.web.socket.config.annotation.EnableWebSocket
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
+import org.springframework.web.socket.handler.TextWebSocketHandler
 
-/*
-class SenderWS (private val session: Session, private val url: String) : Runnable{
-    override fun run() {
-        val logger = LoggerFactory.getLogger(SenderWS::class.java)
-        logger.info("recipient: ${session.id} message: $url")
-        with(session.basicRemote) {
-            sendTextSafe("Soy un runnable")
-        }
+
+class MyHandler() : TextWebSocketHandler() {
+    @Autowired
+    lateinit var redirectUseCase: RedirectUseCase
+
+    val logger = LoggerFactory.getLogger(MyHandler::class.java)
+
+    override fun handleTextMessage(session: WebSocketSession, message: TextMessage) {
+        logger.info("WS-Received: ${message.payload}")
+        session.sendMessage(TextMessage(redirectUseCase.redirectTo(message.payload).value.target))
+        session.close()
     }
 }
 
-class InterstitialWS() {
-    private lateinit var taskExecutor: TaskExecutor
-
-    fun ejecutarPrueba(session: Session) {
-        val prueba = SenderWS(session, "url")
-        taskExecutor.execute(prueba)
+@Configuration
+@EnableWebSocket
+class WebSocketConfig : WebSocketConfigurer {
+    override fun registerWebSocketHandlers(registry: WebSocketHandlerRegistry) {
+        registry.addHandler(myHandler(), "/ws/")
     }
-}
 
- */
-@Configuration(proxyBeanMethods = false)
-class WebSocketConfig {
     @Bean
-    fun serverEndpoint() = ServerEndpointExporter()
-}
-
-
-/**
- * If the websocket connection underlying this [RemoteEndpoint] is busy sending a message when a call is made to send
- * another one, for example if two threads attempt to call a send method concurrently, or if a developer attempts to
- * send a new message while in the middle of sending an existing one, the send method called while the connection
- * is already busy may throw an [IllegalStateException].
- *
- * This method wraps the call to [RemoteEndpoint.Basic.sendText] in a synchronized block to avoid this exception.
- */
-fun RemoteEndpoint.Basic.sendTextSafe(message: String) {
-    synchronized(this) {
-        sendText(message)
+    fun myHandler(): WebSocketHandler {
+        return MyHandler()
     }
 }
-
-@ServerEndpoint("/prueba")
-@Component
-class WSEndpoint(val redirectUseCase: RedirectUseCase){
-    val logger = LoggerFactory.getLogger(WSEndpoint::class.java)
-
-    /**
-     * Successful connection
-     *
-     * @param session
-     */
-    @OnOpen
-    fun onOpen(session: Session) {
-        logger.info ("Server Connected ... Session ${session.id}")
-        with(session.basicRemote){
-            sendTextSafe("Hola")
-        }
-    }
-
-    /**
-     * Connection closure
-     *
-     * @param session
-     */
-    @OnClose
-    fun onClose(session: Session, closeReason: CloseReason) {
-        logger.info("Session ${session.id} closed because of $closeReason")
-    }
-
-    /**
-     * Message received
-     *
-     * @param message
-     */
-    @OnMessage
-    fun onMsg(message: String, session: Session) {
-        logger.info("Server Message ... Session ${session.id}")
-        val currentLine = Scanner(message.lowercase(Locale.getDefault()))
-        if (currentLine.findInLine("bye") == null) {
-            logger.info("Server received \"${message}\"")
-            runCatching {
-                if (session.isOpen) {
-                    with(session.basicRemote) {
-                        sendTextSafe(redirectUseCase.redirectTo(message).value.target)
-                    }
-                }
-            }.onFailure {
-                logger.error("$it while sending message")
-                session.close(CloseReason(CloseReason.CloseCodes.CLOSED_ABNORMALLY, "I'm sorry, I didn't understand that."))
-            }
-        } else {
-            session.close(CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Alright then, goodbye!"))
-        }
-    }
-
-    @OnError
-    fun onError(session: Session, errorReason: Throwable) {
-        logger.error("$errorReason: Session ${session.id} closed because of ${errorReason.javaClass.name}")
-    }
-}
-
-

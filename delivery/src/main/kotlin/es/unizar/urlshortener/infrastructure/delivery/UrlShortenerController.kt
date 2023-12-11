@@ -1,7 +1,6 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.ClickProperties
-import es.unizar.urlshortener.core.Redirection
 import es.unizar.urlshortener.core.ShortUrlProperties
 import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
@@ -48,7 +47,7 @@ interface UrlShortenerController {
     /**
      * Exception handler for a redirection with interstitial.
      */
-    fun redirectToInterstitial(ex: UrlShortenerControllerImpl.InterstitialRedirectException,
+    fun redirectToInterstitial(ex: UrlShortenerControllerImpl.InterstitialRedirectException, request: HttpServletRequest,
                                response: HttpServletResponse): ModelAndView
 }
 
@@ -83,19 +82,14 @@ class UrlShortenerControllerImpl(
     val redirectUseCase: RedirectUseCase,
     val logClickUseCase: LogClickUseCase,
     val createShortUrlUseCase: CreateShortUrlUseCase,
-    val interstitialCountController: InterstitialCountController,
-    val qrUrlsUsedCountController: QRUrlsUsedCountController,
-    val redirectionsExecutedCountController: RedirectionsExecutedCountController,
-    val urlsShortenedCountController: UrlsShortenedCountController
 ) : UrlShortenerController {
-
-    class InterstitialRedirectException(redirection: Redirection) : Exception(redirection.target)
+    class InterstitialRedirectException(id: String) : Exception(id)
 
     @GetMapping("/{id:(?!api|index).*}")
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Unit> {
         val (redirection, banner) = redirectUseCase.redirectTo(id)
         logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
-        if (banner) throw InterstitialRedirectException(redirection)
+        if (banner) throw InterstitialRedirectException(id)
         val h = HttpHeaders()
         h.location = URI.create(redirection.target)
         return ResponseEntity<Unit>(h, HttpStatus.valueOf(redirection.mode))
@@ -104,11 +98,14 @@ class UrlShortenerControllerImpl(
     @ResponseBody
     @ExceptionHandler(value = [InterstitialRedirectException::class])
     @ResponseStatus(HttpStatus.OK)
-    override fun redirectToInterstitial(ex: InterstitialRedirectException,
+    override fun redirectToInterstitial(ex: InterstitialRedirectException, request: HttpServletRequest,
                                         response: HttpServletResponse) : ModelAndView {
         val modelAndView = ModelAndView()
         modelAndView.viewName = "interstitial"
-        modelAndView.addObject("url", ex.message)
+        modelAndView.addObject("id", ex.message)
+        //modelAndView.addObject("url", "ws://localhost:8080/ws/")
+        val completeUrl = ex.message?.let { request.requestURL.toString().replace("http://", "ws://").replace(it, "") }
+        modelAndView.addObject("url", completeUrl + "ws/")
         val headerValue = CacheControl.maxAge(INTERSTITIAL_CACHE_HOURS, TimeUnit.HOURS).headerValue
         response.addHeader(HttpHeaders.CACHE_CONTROL, headerValue)
         return modelAndView
@@ -124,7 +121,7 @@ class UrlShortenerControllerImpl(
                 interstitial = data.interstitial
             )
         ).let {
-            urlsShortenedCountController.incrementCounter()
+            //urlsShortenedCountController.incrementCounter()
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url

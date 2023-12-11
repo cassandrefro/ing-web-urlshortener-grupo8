@@ -30,13 +30,18 @@
         const secondsRedirect = 5;
         (async() => {
             var url = [[${url}]]
-            console.log("Redirecting to: " + url)
+            var id = [[${id}]]
+            const exampleSocket = new WebSocket(url)
+            console.log("Redirecting to: " + id)
             for (var i = secondsRedirect; i > 0; i--) {
                 document.getElementById("seconds").innerHTML = i
                 await delay(1000)
             }
             document.getElementById("seconds").innerHTML = 0
-            window.location.replace(url)
+            exampleSocket.send(id)
+            exampleSocket.onmessage = (event) => {
+                window.location.replace(event.data)
+            };
         })();
     </script>
 </div>
