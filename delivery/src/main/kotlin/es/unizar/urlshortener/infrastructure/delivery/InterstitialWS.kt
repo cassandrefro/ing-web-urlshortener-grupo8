@@ -1,5 +1,6 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
+import es.unizar.urlshortener.core.usecases.RedirectUseCase
 import jakarta.websocket.*
 import jakarta.websocket.server.ServerEndpoint
 import org.slf4j.LoggerFactory
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.task.TaskExecutor
 import org.springframework.stereotype.Component
+import org.springframework.stereotype.Repository
 import org.springframework.web.socket.server.standard.ServerEndpointExporter
 import java.util.*
 
@@ -31,12 +33,13 @@ class InterstitialWS() {
     }
 }
 
+ */
 @Configuration(proxyBeanMethods = false)
 class WebSocketConfig {
     @Bean
     fun serverEndpoint() = ServerEndpointExporter()
 }
- */
+
 
 /**
  * If the websocket connection underlying this [RemoteEndpoint] is busy sending a message when a call is made to send
@@ -54,7 +57,7 @@ fun RemoteEndpoint.Basic.sendTextSafe(message: String) {
 
 @ServerEndpoint("/prueba")
 @Component
-class WSEndpoint(){
+class WSEndpoint(val redirectUseCase: RedirectUseCase){
     val logger = LoggerFactory.getLogger(WSEndpoint::class.java)
 
     /**
@@ -94,7 +97,7 @@ class WSEndpoint(){
             runCatching {
                 if (session.isOpen) {
                     with(session.basicRemote) {
-                        sendTextSafe("---")
+                        sendTextSafe(redirectUseCase.redirectTo(message).value.target)
                     }
                 }
             }.onFailure {
