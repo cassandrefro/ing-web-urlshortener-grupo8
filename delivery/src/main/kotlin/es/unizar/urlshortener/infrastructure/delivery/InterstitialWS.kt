@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.task.TaskExecutor
 import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketHandler
 import org.springframework.web.socket.WebSocketSession
@@ -14,16 +15,28 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import org.springframework.web.socket.handler.TextWebSocketHandler
 
 
-class MyHandler() : TextWebSocketHandler() {
+class SenderWS (private val session: WebSocketSession, private val url: String) : Runnable{
+    val logger = LoggerFactory.getLogger(SenderWS::class.java)
+
+    override fun run() {
+        logger.info("recipient: ${session.id} message: $url")
+        Thread.sleep(5000)
+        session.sendMessage(TextMessage(url))
+        session.close()
+    }
+}
+
+class InterstitialWSHandler() : TextWebSocketHandler() {
     @Autowired
     lateinit var redirectUseCase: RedirectUseCase
+    @Autowired
+    private lateinit var taskExecutor: TaskExecutor
 
-    val logger = LoggerFactory.getLogger(MyHandler::class.java)
+    val logger = LoggerFactory.getLogger(InterstitialWSHandler::class.java)
 
     override fun handleTextMessage(session: WebSocketSession, message: TextMessage) {
         logger.info("WS-Received: ${message.payload}")
-        session.sendMessage(TextMessage(redirectUseCase.redirectTo(message.payload).value.target))
-        session.close()
+        taskExecutor.execute(SenderWS(session, redirectUseCase.redirectTo(message.payload).value.target))
     }
 }
 
@@ -31,11 +44,11 @@ class MyHandler() : TextWebSocketHandler() {
 @EnableWebSocket
 class WebSocketConfig : WebSocketConfigurer {
     override fun registerWebSocketHandlers(registry: WebSocketHandlerRegistry) {
-        registry.addHandler(myHandler(), "/ws/")
+        registry.addHandler(interstitialWSHandler(), "/ws/")
     }
 
     @Bean
-    fun myHandler(): WebSocketHandler {
-        return MyHandler()
+    fun interstitialWSHandler(): WebSocketHandler {
+        return InterstitialWSHandler()
     }
 }

@@ -20,9 +20,4 @@ class TaskExecutorConfiguration() {
         executor.queueCapacity = 25
         return executor
     }
-
-    /*
-    @Bean
-    fun interstitialWS() : InterstitialWS = InterstitialWS()
-     */
 }

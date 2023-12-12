@@ -32,16 +32,18 @@
             var url = [[${url}]]
             var id = [[${id}]]
             const exampleSocket = new WebSocket(url)
-            console.log("Redirecting to: " + id)
+            exampleSocket.onopen = (() =>{
+                exampleSocket.send(id)
+            })
+            exampleSocket.onmessage = (event) => {
+                window.location.replace(event.data)
+            };
+            //console.log("Redirecting to: " + id)
             for (var i = secondsRedirect; i > 0; i--) {
                 document.getElementById("seconds").innerHTML = i
                 await delay(1000)
             }
             document.getElementById("seconds").innerHTML = 0
-            exampleSocket.send(id)
-            exampleSocket.onmessage = (event) => {
-                window.location.replace(event.data)
-            };
         })();
     </script>
 </div>
