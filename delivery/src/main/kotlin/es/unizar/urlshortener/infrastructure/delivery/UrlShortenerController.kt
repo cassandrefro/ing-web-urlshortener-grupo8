@@ -83,10 +83,6 @@ class UrlShortenerControllerImpl(
     val redirectUseCase: RedirectUseCase,
     val logClickUseCase: LogClickUseCase,
     val createShortUrlUseCase: CreateShortUrlUseCase,
-    val interstitialCountController: InterstitialCountController,
-    val qrUrlsUsedCountController: QRUrlsUsedCountController,
-    val redirectionsExecutedCountController: RedirectionsExecutedCountController,
-    val urlsShortenedCountController: UrlsShortenedCountController
 ) : UrlShortenerController {
 
     class InterstitialRedirectException(redirection: Redirection) : Exception(redirection.target)
@@ -124,7 +120,6 @@ class UrlShortenerControllerImpl(
                 interstitial = data.interstitial
             )
         ).let {
-            urlsShortenedCountController.incrementCounter()
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
