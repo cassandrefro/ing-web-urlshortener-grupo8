@@ -59,6 +59,7 @@ interface UrlShortenerController {
 data class ShortUrlDataIn(
     val url: String,
     val sponsor: String? = null,
+    val customWord: String,
     val interstitial: Boolean? = null
 )
 
@@ -119,7 +120,8 @@ class UrlShortenerControllerImpl(
                 ip = request.remoteAddr,
                 sponsor = data.sponsor,
                 interstitial = data.interstitial
-            )
+            ),
+            customWord = data.customWord
         ).let {
             //urlsShortenedCountController.incrementCounter()
             val h = HttpHeaders()

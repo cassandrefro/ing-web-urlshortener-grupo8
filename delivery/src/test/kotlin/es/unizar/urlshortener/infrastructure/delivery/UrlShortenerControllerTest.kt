@@ -7,6 +7,7 @@ import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.Redirect
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
+import es.unizar.urlshortener.core.CustomWordService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.never
@@ -42,6 +43,9 @@ class UrlShortenerControllerTest {
 
     @MockBean
     private lateinit var createShortUrlUseCase: CreateShortUrlUseCase
+
+    /*@MockBean
+    private lateinit var customWordService: CustomWordService*/
 
     @Test
     fun `redirectTo returns a redirect when the key exists`() {
@@ -87,13 +91,15 @@ class UrlShortenerControllerTest {
         given(
             createShortUrlUseCase.create(
                 url = "http://example.com/",
-                data = ShortUrlProperties(ip = "127.0.0.1")
+                data = ShortUrlProperties(ip = "127.0.0.1"),
+                customWord = ""
             )
         ).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/")))
 
         mockMvc.perform(
             post("/api/link")
                 .param("url", "http://example.com/")
+                .param("customWord", "")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
         )
             .andDo(print())
@@ -102,6 +108,28 @@ class UrlShortenerControllerTest {
             .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
     }
 
+    
+
+    @Test
+    fun `creates returns bad request if it can compute a hash`() {
+        given(
+            createShortUrlUseCase.create(
+                url = "ftp://example.com/",
+                data = ShortUrlProperties(ip = "127.0.0.1"),
+                customWord = ""
+            )
+        ).willAnswer { throw InvalidUrlException("ftp://example.com/") }
+
+        mockMvc.perform(
+            post("/api/link")
+                .param("url", "ftp://example.com/")
+                .param("customWord", "")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.statusCode").value(400))
+    }
+    
     @Test
     fun `creates returns a redirect with interstitial if it's asked for it`() {
         given(
@@ -129,20 +157,58 @@ class UrlShortenerControllerTest {
     }
 
     @Test
-    fun `creates returns bad request if it can compute a hash`() {
+    fun `creates returns bad request if it can't compute an already used custom word`() {
         given(
             createShortUrlUseCase.create(
-                url = "ftp://example.com/",
-                data = ShortUrlProperties(ip = "127.0.0.1")
+                url = "http://example.com/",
+                data = ShortUrlProperties(ip = "127.0.0.1"),
+                customWord = "example"
             )
-        ).willAnswer { throw InvalidUrlException("ftp://example.com/") }
+        ).willAnswer { throw CustomWordInUseException("example") }
 
         mockMvc.perform(
             post("/api/link")
-                .param("url", "ftp://example.com/")
+                .param("url", "http://example.com/")
+                .param("customWord", "example")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
         )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.statusCode").value(400))
     }
+
+    @Test
+    fun `creates returns bad request if it can't compute an invalid custom word`() {
+        given(
+            createShortUrlUseCase.create(
+                url = "http://example.com/",
+                data = ShortUrlProperties(ip = "127.0.0.1"),
+                customWord = "e xample"
+            )
+        ).willAnswer { throw InvalidCustomWordException("e xample") }
+
+        mockMvc.perform(
+            post("/api/link")
+                .param("url", "http://example.com/")
+                .param("customWord", "e xample")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.statusCode").value(400))
+    }
+
+    /*@Test
+    fun `create throws InvalidCustomWordException for invalid custom word`() {
+        val invalidWord = "e xample"
+        given(customWordService.isValid(invalidWord)).willReturn(false)
+
+        mockMvc.perform(
+            post("/api/link")
+                .param("url", "http://example.com/")
+                .param("customWord", invalidWord)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.statusCode").value(400))
+    }*/
+
 }
