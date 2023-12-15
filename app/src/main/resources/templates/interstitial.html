@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Redirecting...</title>
+    <link th:href="@{/webjars/bootstrap/3.4.0/css/bootstrap.min.css}" rel="stylesheet"
+          type="text/css"/>
+    <script th:src="@{/webjars/jquery/3.6.1/jquery.min.js}" type="text/javascript"></script>
+    <script th:src="@{/webjars/bootstrap/3.4.0/js/bootstrap.min.js}"
+            type="text/javascript"></script>
+</head>
+<body>
+<div class="container-full">
+    <div class="row">
+        <div class="col-lg-12 text-center">
+            <h1 class="fw-bold">Advertisement</h1>
+        </div>
+    </div>
+    <div class="row">
+        <img class="img-responsive center-block" th:src="@{/images/ad-image.png}" alt="">
+    </div>
+    <div class="row">
+        <div class="col-lg-12 text-center">
+            <p class="lead mb-4">Redirecting in
+                <span id="seconds">5</span>
+                seconds</p>
+        </div>
+    </div>
+    <script th:inline="javascript">
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+        const secondsRedirect = 5;
+        (async() => {
+            var url = [[${url}]]
+            var id = [[${id}]]
+            const exampleSocket = new WebSocket(url)
+            exampleSocket.onopen = (() =>{
+                exampleSocket.send(id)
+            })
+            exampleSocket.onmessage = (event) => {
+                window.location.replace(event.data)
+            };
+            //console.log("Redirecting to: " + id)
+            for (var i = secondsRedirect; i > 0; i--) {
+                document.getElementById("seconds").innerHTML = i
+                await delay(1000)
+            }
+            document.getElementById("seconds").innerHTML = 0
+        })();
+    </script>
+</div>
+</body>
+</html>

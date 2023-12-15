@@ -49,7 +49,8 @@ class CreateShortUrlUseCaseImpl(
                 properties = ShortUrlProperties(
                     safe = data.safe,
                     ip = data.ip,
-                    sponsor = data.sponsor
+                    sponsor = data.sponsor,
+                    interstitial = data.interstitial
                 )
             )
             if(shortUrlRepository.findByKey(id) == null) {
