@@ -123,7 +123,6 @@ class UrlShortenerControllerImpl(
             ),
             customWord = data.customWord
         ).let {
-            //urlsShortenedCountController.incrementCounter()
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url

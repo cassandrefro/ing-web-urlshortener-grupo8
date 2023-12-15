@@ -44,8 +44,8 @@ class UrlShortenerControllerTest {
     @MockBean
     private lateinit var createShortUrlUseCase: CreateShortUrlUseCase
 
-    /*@MockBean
-    private lateinit var customWordService: CustomWordService*/
+    @MockBean
+    private lateinit var shortUrlRepositoryService: ShortUrlRepositoryService
 
     @Test
     fun `redirectTo returns a redirect when the key exists`() {
@@ -218,4 +218,33 @@ class UrlShortenerControllerTest {
             .andExpect(jsonPath("$.statusCode").value(400))
     }
 
+    @Test
+    fun `check if custom metrics are enabled`() {
+        mockMvc.perform(
+            get("/actuator")
+        )
+            .andDo(print())
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.names").exists())
+            .andExpect(jsonPath("$.names.redirections-executed-counter").exists())
+    }
+
+    @Test
+    fun `check if urls shortened counter counts`() {
+        given(
+            shortUrlRepositoryService.count()
+        ).willReturn(1)
+
+        mockMvc.perform(
+            post("/api/stats/metrics")
+                .param("url", "http://example.com/")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+        )
+            .andDo(print())
+            .andExpect(status().isCreated)
+            .andExpect(redirectedUrl("http://localhost/f684a3c4"))
+            .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
+    }
 }
+
+
