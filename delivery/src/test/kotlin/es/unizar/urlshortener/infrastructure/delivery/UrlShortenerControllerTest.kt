@@ -5,7 +5,9 @@ package es.unizar.urlshortener.infrastructure.delivery
 import es.unizar.urlshortener.core.*
 import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
+import es.unizar.urlshortener.core.usecases.Redirect
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
+import es.unizar.urlshortener.core.CustomWordService
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.never
@@ -42,9 +44,13 @@ class UrlShortenerControllerTest {
     @MockBean
     private lateinit var createShortUrlUseCase: CreateShortUrlUseCase
 
+    /*@MockBean
+    private lateinit var customWordService: CustomWordService*/
+
     @Test
     fun `redirectTo returns a redirect when the key exists`() {
-        given(redirectUseCase.redirectTo("key")).willReturn(Redirection("http://example.com/"))
+        given(redirectUseCase.redirectTo("key")).
+            willReturn(Redirect(Redirection("http://example.com/"), false))
 
         mockMvc.perform(get("/{id}", "key"))
             .andExpect(status().isTemporaryRedirect)
@@ -66,6 +72,19 @@ class UrlShortenerControllerTest {
         verify(logClickUseCase, never()).logClick("key", ClickProperties(ip = "127.0.0.1"))
     }
 
+    @Test
+    fun `redirectTo returns an interstitial page when the key exist and has interstitial`() {
+        given(redirectUseCase.redirectTo("key")).
+            willReturn(Redirect(Redirection("http://example.com/"), true))
+
+        mockMvc.perform(get("/{id}", "key"))
+            .andDo(print())
+            .andExpect(status().isOk)
+            .andExpect(view().name("interstitial"))
+            .andExpect(model().attribute("id", "key"))
+
+        verify(logClickUseCase).logClick("key", ClickProperties(ip = "127.0.0.1"))
+    }
 
     @Test
     fun `redirectTo returns a not found when the key does not exist`() {
@@ -85,13 +104,15 @@ class UrlShortenerControllerTest {
         given(
             createShortUrlUseCase.create(
                 url = "http://example.com/",
-                data = ShortUrlProperties(ip = "127.0.0.1")
+                data = ShortUrlProperties(ip = "127.0.0.1"),
+                customWord = ""
             )
         ).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/")))
 
         mockMvc.perform(
             post("/api/link")
                 .param("url", "http://example.com/")
+                .param("customWord", "")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
         )
             .andDo(print())
@@ -100,18 +121,68 @@ class UrlShortenerControllerTest {
             .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
     }
 
+    
+
     @Test
     fun `creates returns bad request if it can't compute a hash`() {
         given(
             createShortUrlUseCase.create(
                 url = "ftp://example.com/",
-                data = ShortUrlProperties(ip = "127.0.0.1")
+                data = ShortUrlProperties(ip = "127.0.0.1"),
+                customWord = ""
             )
         ).willAnswer { throw InvalidUrlException("ftp://example.com/") }
 
         mockMvc.perform(
             post("/api/link")
                 .param("url", "ftp://example.com/")
+                .param("customWord", "")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.statusCode").value(400))
+    }
+    
+    @Test
+    fun `creates returns a redirect with interstitial if it's asked for it`() {
+        given(
+            createShortUrlUseCase.create(
+                url = "http://example.com/",
+                data = ShortUrlProperties(ip = "127.0.0.1",
+                                        interstitial = true)
+            )
+        ).willReturn(ShortUrl("f684a3c4",
+                            Redirection("http://example.com/"),
+                            properties = ShortUrlProperties(interstitial = true)
+        ))
+
+        mockMvc.perform(
+            post("/api/link")
+                .param("url", "http://example.com/")
+                .param("interstitial", "true")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+        )
+            .andDo(print())
+            .andExpect(status().isCreated)
+            .andExpect(redirectedUrl("http://localhost/f684a3c4"))
+            .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
+            .andExpect(jsonPath("$.properties.interstitial").value(true))
+    }
+
+    @Test
+    fun `creates returns bad request if it can't compute an already used custom word`() {
+        given(
+            createShortUrlUseCase.create(
+                url = "http://example.com/",
+                data = ShortUrlProperties(ip = "127.0.0.1"),
+                customWord = "example"
+            )
+        ).willAnswer { throw CustomWordInUseException("example") }
+
+        mockMvc.perform(
+            post("/api/link")
+                .param("url", "http://example.com/")
+                .param("customWord", "example")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
         )
             .andExpect(status().isBadRequest)
@@ -127,12 +198,24 @@ class UrlShortenerControllerTest {
             )
         ).willAnswer { throw UrlNotReachableException("http://example.com/") }
 
+    @Test
+    fun `creates returns bad request if it can't compute an invalid custom word`() {
+        given(
+            createShortUrlUseCase.create(
+                url = "http://example.com/",
+                data = ShortUrlProperties(ip = "127.0.0.1"),
+                customWord = "e xample"
+            )
+        ).willAnswer { throw InvalidCustomWordException("e xample") }
+
         mockMvc.perform(
             post("/api/link")
                 .param("url", "http://example.com/")
+                .param("customWord", "e xample")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
         )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.statusCode").value(400))
     }
+
 }

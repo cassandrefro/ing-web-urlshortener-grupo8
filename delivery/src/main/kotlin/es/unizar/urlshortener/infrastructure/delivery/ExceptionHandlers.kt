@@ -4,6 +4,8 @@ import es.unizar.urlshortener.core.InvalidUrlException
 import es.unizar.urlshortener.core.RedirectionNotFound
 import es.unizar.urlshortener.core.RedirectionNotReachableException
 import es.unizar.urlshortener.core.UrlNotReachableException
+import es.unizar.urlshortener.core.InvalidCustomWordException
+import es.unizar.urlshortener.core.CustomWordInUseException
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -36,6 +38,14 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun redirectionNotReachable(ex: RedirectionNotReachableException) = 
                     ErrorMessage(HttpStatus.FORBIDDEN.value(), ex.message)
+    @ExceptionHandler(value = [InvalidCustomWordException::class])
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun invalidCustomWord(ex: InvalidCustomWordException) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
+
+    @ResponseBody
+    @ExceptionHandler(value = [CustomWordInUseException::class])
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun customWordInUse(ex: CustomWordInUseException) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
 }
 
 data class ErrorMessage(
