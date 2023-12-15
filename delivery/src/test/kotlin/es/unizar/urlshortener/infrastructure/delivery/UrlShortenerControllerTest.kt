@@ -64,7 +64,7 @@ class UrlShortenerControllerTest {
             .andDo(print())
             .andExpect(status().isOk)
             .andExpect(view().name("interstitial"))
-            .andExpect(model().attribute("url", "http://example.com/"))
+            .andExpect(model().attribute("id", "key"))
 
         verify(logClickUseCase).logClick("key", ClickProperties(ip = "127.0.0.1"))
     }
