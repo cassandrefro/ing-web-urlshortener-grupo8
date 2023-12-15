@@ -47,8 +47,8 @@ interface UrlShortenerController {
     /**
      * Exception handler for a redirection with interstitial.
      */
-    fun redirectToInterstitial(ex: UrlShortenerControllerImpl.InterstitialRedirectException, request: HttpServletRequest,
-                               response: HttpServletResponse): ModelAndView
+    fun redirectToInterstitial(ex: UrlShortenerControllerImpl.InterstitialRedirectException
+                               , request: HttpServletRequest, response: HttpServletResponse): ModelAndView
 }
 
 

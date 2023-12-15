@@ -14,19 +14,20 @@ import org.springframework.web.socket.config.annotation.WebSocketConfigurer
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import org.springframework.web.socket.handler.TextWebSocketHandler
 
+const val MS_TO_SEND : Long = 5000
 
 class SenderWS (private val session: WebSocketSession, private val url: String) : Runnable{
     val logger = LoggerFactory.getLogger(SenderWS::class.java)
 
     override fun run() {
         logger.info("recipient: ${session.id} message: $url")
-        Thread.sleep(5000)
+        Thread.sleep(MS_TO_SEND)
         session.sendMessage(TextMessage(url))
         session.close()
     }
 }
 
-class InterstitialWSHandler() : TextWebSocketHandler() {
+class InterstitialWSHandler : TextWebSocketHandler() {
     @Autowired
     lateinit var redirectUseCase: RedirectUseCase
     @Autowired
