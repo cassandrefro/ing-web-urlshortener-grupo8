@@ -50,7 +50,7 @@ data class ShortUrlDataIn(
  */
 data class ShortUrlDataOut(
     val url: URI? = null,
-    val properties: Map<String, Any?> = emptyMap()
+    val properties: Map<String, Any> = emptyMap()
 )
 
 /**
@@ -86,14 +86,10 @@ class UrlShortenerControllerImpl(
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
-
-            // Explicitly check for null and convert Boolean? to Boolean
-            val safeValue: Boolean = it.properties.safe ?: false
-
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
-                    "safe" to safeValue
+                    "safe" to it.properties.safe
                 )
             )
             ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)

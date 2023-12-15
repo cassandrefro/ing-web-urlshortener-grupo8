@@ -23,7 +23,11 @@ class CreateShortUrlUseCaseImpl(
     private val hashService: HashService
 ) : CreateShortUrlUseCase {
     override fun create(url: String, data: ShortUrlProperties): ShortUrl =
-        if (validatorService.isValid(url) && validatorService.isReachable(url)) {
+        if (validatorService.isValid(url)) {
+            // verify if url is reachable
+            if (!validatorService.isReachable(url)) {
+                throw UrlNotReachableException(url)
+            }
             val id: String = hashService.hasUrl(url)
             val su = ShortUrl(
                 hash = id,

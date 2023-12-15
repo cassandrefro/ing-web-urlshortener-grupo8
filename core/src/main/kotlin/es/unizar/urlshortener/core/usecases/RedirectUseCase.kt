@@ -18,29 +18,23 @@ interface RedirectUseCase {
  * Implementation of [RedirectUseCase].
  */
 class RedirectUseCaseImpl(
-    private val shortUrlRepository: ShortUrlRepositoryService
+    private val shortUrlRepository: ShortUrlRepositoryService,
+    private val validatorService: ValidatorService
 ) : RedirectUseCase {
     override fun redirectTo(key: String) : Redirection {
         val redirection = shortUrlRepository
-            .findByKey(key)
-            ?.redirection
-            ?: throw RedirectionNotFound(key)
+        .findByKey(key)
+        ?.redirection
+        ?: throw RedirectionNotFound(key)
 
-        val shortUrl = shortUrlRepository.findByKey(key)
-
-        if (shortUrl != null) {
-            if (shortUrl.properties.safe != null) {
-                // Validated
-                if (!shortUrl.properties.safe) {
-                    throw RedirectUnsafeException()
-                }
-            } else {
-                // Not yet validated
-                throw RedirectionNotValidatedException(RETRY_AFTER)
-            }
-        }
+        //verify if url in the db is reachable
+        val url = redirection.target
+        if (!validatorService.isReachable(url)) {
+            throw RedirectionNotReachableException(url)
+        }   
 
         return redirection
     }
+             
 }
 

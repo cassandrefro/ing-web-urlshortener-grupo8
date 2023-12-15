@@ -54,9 +54,9 @@ class UrlShortenerControllerTest {
     }
 
     @Test
-    fun `redirectTo returns forbidden if the key exists but destination URI is not secure`() {
+    fun `redirectTo returns forbidden if the key exists but destination URI is not reachable`() {
         given(redirectUseCase.redirectTo("key"))
-            .willAnswer { throw RedirectUnsafeException() }
+            .willAnswer { throw RedirectionNotReachableException("http://example.com/") }
 
         mockMvc.perform(get("/{id}", "key"))
             .andDo(print())
@@ -101,7 +101,7 @@ class UrlShortenerControllerTest {
     }
 
     @Test
-    fun `creates returns bad request if it can compute a hash`() {
+    fun `creates returns bad request if it can't compute a hash`() {
         given(
             createShortUrlUseCase.create(
                 url = "ftp://example.com/",
@@ -112,6 +112,24 @@ class UrlShortenerControllerTest {
         mockMvc.perform(
             post("/api/link")
                 .param("url", "ftp://example.com/")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.statusCode").value(400))
+    }
+
+    @Test
+    fun `creates returns bad request if it can't compute a hash when the URI is not reachable`() {
+        given(
+            createShortUrlUseCase.create(
+                url = "http://example.com/",
+                data = ShortUrlProperties(ip = "127.0.0.1")
+            )
+        ).willAnswer { throw UrlNotReachableException("http://example.com/") }
+
+        mockMvc.perform(
+            post("/api/link")
+                .param("url", "http://example.com/")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
         )
             .andExpect(status().isBadRequest)
