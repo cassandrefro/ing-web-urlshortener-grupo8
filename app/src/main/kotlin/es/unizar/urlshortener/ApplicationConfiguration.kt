@@ -12,12 +12,14 @@ import es.unizar.urlshortener.infrastructure.repositories.ShortUrlRepositoryServ
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.scheduling.annotation.EnableScheduling
 
 /**
  * Wires use cases with service implementations, and services implementations with repositories.
  *
  * **Note**: Spring Boot is able to discover this [Configuration] without further configuration.
  */
+@EnableScheduling
 @Configuration
 class ApplicationConfiguration(
     @Autowired val shortUrlEntityRepository: ShortUrlEntityRepository,
