@@ -25,32 +25,16 @@ class QRCodeUseCaseImpl(
     override fun generateQRCode(url: String, width: Int, height: Int): ByteArray {
         // url has format http://localhost:8080/key
         val key = url.split("/").last()
-        // print in the console the key
-        println("key: $key")
+
         val shortUrl = shortUrlRepository.findByKey(key)
         println("shortUrl: $shortUrl")
-        //shortUrl?.let {
-            //shortUrl.properties.safe?.let { safe ->
-                //if (!shortUrl.properties.safe) {
-                //    throw RedirectUnsafeException()
-                //} else {
-                    //shortUrl.properties.qr?.let { qr ->
-                      //  if (!qr) {
-                        //    throw QrCodeNotFoundException()
-                        //} else {
-                            val qrCodeWriter = QRCodeWriter()
-                            val bitMatrix = qrCodeWriter.encode(url, BarcodeFormat.QR_CODE, width, height)
-                            
-                            val outputStream = ByteArrayOutputStream()
-                            MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream)
-                            return outputStream.toByteArray()
-                        //}
-                    //} ?: throw QrCodeNotFoundException()
-                //}
-
-            //} ?: throw RedirectionNotValidatedException(RETRY_AFTER)
-
-        //} ?: throw RedirectionNotValidatedException(RETRY_AFTER)
+        
+        val qrCodeWriter = QRCodeWriter()
+        val bitMatrix = qrCodeWriter.encode(url, BarcodeFormat.QR_CODE, width, height)
+        
+        val outputStream = ByteArrayOutputStream()
+        MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream)
+        return outputStream.toByteArray()
         
     }
 }

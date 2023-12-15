@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
-// import alert
 
 
 /**
@@ -115,9 +114,19 @@ class UrlShortenerControllerImpl(
     
     @GetMapping("/{id}/qr", produces = [MediaType.IMAGE_PNG_VALUE])
     override fun getQr(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray> {
-        val shortUrl = shortUrlRepository.findByKey(id) ?: throw RedirectionNotFound(id)
+        //If the id is not in the db, return 404
+        val shortUrl = shortUrlRepository.findByKey(id) ?: throw QrCodeNotFoundException(id)
 
-        if(shortUrl == null) {
+        //If the id is in the db but the qr property is false, return 404
+
+        //val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it, null) }.toUri()
+        val completeUrl = request.requestURL.toString().replace("/qr", "")
+        var qrCodeImage = qrCodeUseCase.generateQRCode(completeUrl)
+        val h = HttpHeaders()
+        h.contentType = MediaType.IMAGE_PNG
+        return ResponseEntity(qrCodeImage, h, HttpStatus.OK)
+
+        /*if(shortUrl == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         } else {
             //if(shortUrl.properties.qr == false || shortUrl.properties.qr == null) {
@@ -136,6 +145,6 @@ class UrlShortenerControllerImpl(
                 h.contentType = MediaType.IMAGE_PNG
                 return ResponseEntity(qrCodeImage, h, HttpStatus.OK)
            // }
-        }   
+        }  */ 
     }
 }
