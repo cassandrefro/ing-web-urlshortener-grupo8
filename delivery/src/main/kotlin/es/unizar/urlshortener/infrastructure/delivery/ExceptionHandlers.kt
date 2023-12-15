@@ -2,6 +2,8 @@ package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.InvalidUrlException
 import es.unizar.urlshortener.core.RedirectionNotFound
+import es.unizar.urlshortener.core.RedirectionNotReachableException
+import es.unizar.urlshortener.core.UrlNotReachableException
 import es.unizar.urlshortener.core.InvalidCustomWordException
 import es.unizar.urlshortener.core.CustomWordInUseException
 import org.springframework.http.HttpStatus
@@ -27,6 +29,15 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     fun redirectionNotFound(ex: RedirectionNotFound) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
 
     @ResponseBody
+    @ExceptionHandler(value = [UrlNotReachableException::class])
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun urlNotReachable(ex: UrlNotReachableException) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
+
+    @ResponseBody
+    @ExceptionHandler(value = [RedirectionNotReachableException::class])
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    fun redirectionNotReachable(ex: RedirectionNotReachableException) = 
+                    ErrorMessage(HttpStatus.FORBIDDEN.value(), ex.message)
     @ExceptionHandler(value = [InvalidCustomWordException::class])
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun invalidCustomWord(ex: InvalidCustomWordException) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)

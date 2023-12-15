@@ -43,6 +43,11 @@ class CreateShortUrlUseCaseImpl(
             }
         }
         if (validatorService.isValid(url)) {
+            // verify if url is reachable
+            if (!validatorService.isReachable(url)) {
+                throw UrlNotReachableException(url)
+            }
+            val id: String = hashService.hasUrl(url)
             val su = ShortUrl(
                 hash = id,
                 redirection = Redirection(target = url),

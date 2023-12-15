@@ -37,10 +37,10 @@ class ApplicationConfiguration(
     fun hashService() = HashServiceImpl()
 
     @Bean
-    fun customWordService() = CustomWordServiceImpl()
-
+    fun redirectUseCase() = RedirectUseCaseImpl(shortUrlRepositoryService(), validatorService())
+    
     @Bean
-    fun redirectUseCase() = RedirectUseCaseImpl(shortUrlRepositoryService())
+    fun customWordService() = CustomWordServiceImpl()
 
     @Bean
     fun logClickUseCase() = LogClickUseCaseImpl(clickRepositoryService())

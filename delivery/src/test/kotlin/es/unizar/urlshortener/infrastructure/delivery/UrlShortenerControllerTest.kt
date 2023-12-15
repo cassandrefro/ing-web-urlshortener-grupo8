@@ -60,6 +60,19 @@ class UrlShortenerControllerTest {
     }
 
     @Test
+    fun `redirectTo returns forbidden if the key exists but destination URI is not reachable`() {
+        given(redirectUseCase.redirectTo("key"))
+            .willAnswer { throw RedirectionNotReachableException("http://example.com/") }
+
+        mockMvc.perform(get("/{id}", "key"))
+            .andDo(print())
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.statusCode").value(403))
+
+        verify(logClickUseCase, never()).logClick("key", ClickProperties(ip = "127.0.0.1"))
+    }
+
+    @Test
     fun `redirectTo returns an interstitial page when the key exist and has interstitial`() {
         given(redirectUseCase.redirectTo("key")).
             willReturn(Redirect(Redirection("http://example.com/"), true))
@@ -111,7 +124,7 @@ class UrlShortenerControllerTest {
     
 
     @Test
-    fun `creates returns bad request if it can compute a hash`() {
+    fun `creates returns bad request if it can't compute a hash`() {
         given(
             createShortUrlUseCase.create(
                 url = "ftp://example.com/",
@@ -177,6 +190,15 @@ class UrlShortenerControllerTest {
     }
 
     @Test
+    fun `creates returns bad request if it can't compute a hash when the URI is not reachable`() {
+        given(
+            createShortUrlUseCase.create(
+                url = "http://example.com/",
+                data = ShortUrlProperties(ip = "127.0.0.1")
+            )
+        ).willAnswer { throw UrlNotReachableException("http://example.com/") }
+
+    @Test
     fun `creates returns bad request if it can't compute an invalid custom word`() {
         given(
             createShortUrlUseCase.create(
@@ -195,20 +217,5 @@ class UrlShortenerControllerTest {
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.statusCode").value(400))
     }
-
-    /*@Test
-    fun `create throws InvalidCustomWordException for invalid custom word`() {
-        val invalidWord = "e xample"
-        given(customWordService.isValid(invalidWord)).willReturn(false)
-
-        mockMvc.perform(
-            post("/api/link")
-                .param("url", "http://example.com/")
-                .param("customWord", invalidWord)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-        )
-            .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.statusCode").value(400))
-    }*/
 
 }
