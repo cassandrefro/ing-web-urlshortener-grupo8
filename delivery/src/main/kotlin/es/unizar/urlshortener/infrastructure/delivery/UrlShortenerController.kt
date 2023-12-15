@@ -7,6 +7,7 @@ import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.CacheControl
 import org.springframework.http.HttpHeaders
@@ -85,9 +86,11 @@ class UrlShortenerControllerImpl(
     val createShortUrlUseCase: CreateShortUrlUseCase,
 ) : UrlShortenerController {
     class InterstitialRedirectException(id: String) : Exception(id)
+    val logger = LoggerFactory.getLogger(UrlShortenerController::class.java)
 
     @GetMapping("/{id:(?!api|index).*}")
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Unit> {
+        logger.info("Endpoint: /{id:(?!api|index).*}")
         val (redirection, banner) = redirectUseCase.redirectTo(id)
         logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
         if (banner) throw InterstitialRedirectException(id)
@@ -101,6 +104,7 @@ class UrlShortenerControllerImpl(
     @ResponseStatus(HttpStatus.OK)
     override fun redirectToInterstitial(ex: InterstitialRedirectException, request: HttpServletRequest,
                                         response: HttpServletResponse) : ModelAndView {
+        logger.info("ExceptionHandler: InterstitialRedirectException with ${ex.message}")
         val modelAndView = ModelAndView()
         modelAndView.viewName = "interstitial"
         modelAndView.addObject("id", ex.message)
@@ -113,7 +117,8 @@ class UrlShortenerControllerImpl(
     }
 
     @PostMapping("/api/link", consumes = [MediaType.APPLICATION_FORM_URLENCODED_VALUE])
-    override fun shortener(data: ShortUrlDataIn, request: HttpServletRequest): ResponseEntity<ShortUrlDataOut> =
+    override fun shortener(data: ShortUrlDataIn, request: HttpServletRequest): ResponseEntity<ShortUrlDataOut> {
+        logger.info("Endpoint: /api/link")
         createShortUrlUseCase.create(
             url = data.url,
             data = ShortUrlProperties(
@@ -123,6 +128,7 @@ class UrlShortenerControllerImpl(
             ),
             customWord = data.customWord
         ).let {
+            logger.info("Created shortUrl")
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
@@ -133,6 +139,7 @@ class UrlShortenerControllerImpl(
                     "interstitial" to (it.properties.interstitial == true)
                 ),
             )
-            ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)
+            return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)
         }
+    }
 }

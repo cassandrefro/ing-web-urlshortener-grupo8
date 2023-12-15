@@ -38,6 +38,8 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun redirectionNotReachable(ex: RedirectionNotReachableException) = 
                     ErrorMessage(HttpStatus.FORBIDDEN.value(), ex.message)
+
+    @ResponseBody
     @ExceptionHandler(value = [InvalidCustomWordException::class])
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun invalidCustomWord(ex: InvalidCustomWordException) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)

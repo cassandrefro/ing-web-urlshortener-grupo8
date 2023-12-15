@@ -6,6 +6,8 @@ import es.unizar.urlshortener.core.Redirection
 import es.unizar.urlshortener.core.RedirectionNotFound
 import es.unizar.urlshortener.core.ShortUrl
 import es.unizar.urlshortener.core.ShortUrlRepositoryService
+import es.unizar.urlshortener.core.ValidatorService
+import es.unizar.urlshortener.core.RedirectionNotReachableException
 
 /**
  * Given a key returns a [Redirection] that contains a [URI target][Redirection.target]
@@ -24,14 +26,14 @@ class RedirectUseCaseImpl(
     private val shortUrlRepository: ShortUrlRepositoryService,
     private val validatorService: ValidatorService
 ) : RedirectUseCase {
-    override fun redirectTo(key: String) : Redirection {
+    override fun redirectTo(key: String) : Redirect {
         val redirection = shortUrlRepository
         .findByKey(key)
         ?.toRedirect()
         ?: throw RedirectionNotFound(key)
 
         //verify if url in the db is reachable
-        val url = redirection.target
+        val url = redirection.value.target
         if (!validatorService.isReachable(url)) {
             throw RedirectionNotReachableException(url)
         }   

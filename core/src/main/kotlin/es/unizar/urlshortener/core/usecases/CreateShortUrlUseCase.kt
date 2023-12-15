@@ -25,8 +25,8 @@ class CreateShortUrlUseCaseImpl(
     private val customWordService: CustomWordService
 ) : CreateShortUrlUseCase {
     override fun create(url: String, data: ShortUrlProperties, customWord: String): ShortUrl {
-        //verify if the custom word is valid for a url
-        if (!customWordService.isValid(customWord)) {
+        //verify if the custom word is valid for an url
+        if (customWord.isNotEmpty() && !customWordService.isValid(customWord)) {
             throw InvalidCustomWordException(customWord)
         }
 
@@ -34,7 +34,9 @@ class CreateShortUrlUseCaseImpl(
         val id: String = hashService.hasUrl(url, customWord)
         val shortUrl = shortUrlRepository.findByKey(id)
 
+        // if exists
         if (shortUrl != null) {
+            //verify if the url matches
             if (shortUrl.redirection.target == url) {
                 return shortUrl
             } else {
@@ -47,9 +49,9 @@ class CreateShortUrlUseCaseImpl(
             if (!validatorService.isReachable(url)) {
                 throw UrlNotReachableException(url)
             }
-            val id: String = hashService.hasUrl(url)
+            val hashCalculated: String = hashService.hasUrl(url, customWord)
             val su = ShortUrl(
-                hash = id,
+                hash = hashCalculated,
                 redirection = Redirection(target = url),
                 properties = ShortUrlProperties(
                     safe = data.safe,
@@ -58,12 +60,8 @@ class CreateShortUrlUseCaseImpl(
                     interstitial = data.interstitial
                 )
             )
-            if(shortUrlRepository.findByKey(id) == null) {
-                shortUrlRepository.save(su)
-                return su
-            } else {
-                throw CustomWordInUseException(customWord)
-            }
+            shortUrlRepository.save(su)
+            return su
         } else {
             throw InvalidUrlException(url)
         }
