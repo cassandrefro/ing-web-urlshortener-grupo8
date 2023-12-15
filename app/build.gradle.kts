@@ -11,8 +11,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.webjars:bootstrap:${Version.BOOTSTRAP}")
     implementation("org.webjars:jquery:${Version.JQUERY}")
-    implementation("org.springdoc:springdoc-openapi-ui:1.7.0")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0")
     
     runtimeOnly("org.hsqldb:hsqldb")
 

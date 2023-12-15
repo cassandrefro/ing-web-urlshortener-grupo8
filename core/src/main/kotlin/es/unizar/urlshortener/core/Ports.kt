@@ -24,6 +24,7 @@ interface ShortUrlRepositoryService {
  */
 interface ValidatorService {
     fun isValid(url: String): Boolean
+    fun isReachable(url: String): Boolean
 }
 
 /**
@@ -32,5 +33,14 @@ interface ValidatorService {
  * **Note**: It is a design decision to create this port. It could be part of the core .
  */
 interface HashService {
-    fun hasUrl(url: String): String
+    fun hasUrl(url: String, customWord: String): String    
+}
+
+/**
+ * [CustomWordService] is the port to the service that validates if a custom word is valid.
+ *
+ * **Note**: It is a design decision to create this port. It could be part of the core .
+ */
+interface CustomWordService {
+    fun isValid(customWord: String): Boolean
 }

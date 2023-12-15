@@ -1,3 +1,5 @@
+@file:Suppress("WildcardImport")
+
 package es.unizar.urlshortener.core.usecases
 
 import es.unizar.urlshortener.core.Redirection
@@ -19,11 +21,23 @@ data class Redirect(val value: Redirection, val interstitial: Boolean)
 fun ShortUrl.toRedirect() = Redirect(value = redirection, interstitial = properties.interstitial ?: false)
 
 class RedirectUseCaseImpl(
-    private val shortUrlRepository: ShortUrlRepositoryService
+    private val shortUrlRepository: ShortUrlRepositoryService,
+    private val validatorService: ValidatorService
 ) : RedirectUseCase {
-    override fun redirectTo(key: String) : Redirect = shortUrlRepository
+    override fun redirectTo(key: String) : Redirection {
+        val redirection = shortUrlRepository
         .findByKey(key)
         ?.toRedirect()
         ?: throw RedirectionNotFound(key)
+
+        //verify if url in the db is reachable
+        val url = redirection.target
+        if (!validatorService.isReachable(url)) {
+            throw RedirectionNotReachableException(url)
+        }   
+
+        return redirection
+    }
+             
 }
 
