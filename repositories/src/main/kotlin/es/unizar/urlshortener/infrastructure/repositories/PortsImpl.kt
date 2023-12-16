@@ -12,6 +12,14 @@ class ClickRepositoryServiceImpl(
     private val clickEntityRepository: ClickEntityRepository
 ) : ClickRepositoryService {
     override fun save(cl: Click): Click = clickEntityRepository.save(cl.toEntity()).toDomain()
+    override fun count(): Long = clickEntityRepository.count()
+
+    /*
+    override fun countInterstitial(): Long {
+        // Example
+        val click : Click = Click()
+    }
+     */
 }
 
 /**
@@ -23,5 +31,7 @@ class ShortUrlRepositoryServiceImpl(
     override fun findByKey(id: String): ShortUrl? = shortUrlEntityRepository.findByHash(id)?.toDomain()
 
     override fun save(su: ShortUrl): ShortUrl = shortUrlEntityRepository.save(su.toEntity()).toDomain()
+
+    override fun count(): Long = shortUrlEntityRepository.count()
 }
 

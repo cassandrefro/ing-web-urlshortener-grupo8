@@ -4,6 +4,14 @@ $(document).ready(
             function (event) {
                 event.preventDefault();
                 var formData = $(this).serializeArray();
+
+                // Change format of interstitial
+                formData = formData.map((e) => {
+                    if(e.name=='interstitial')
+                    {return {name: e.name, value: true}}
+                    else return e
+                })
+
                 $.ajax({
                     type: "POST",
                     url: "/api/link",
