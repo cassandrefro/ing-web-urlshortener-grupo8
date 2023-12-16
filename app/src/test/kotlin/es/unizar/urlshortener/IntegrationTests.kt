@@ -54,7 +54,7 @@ class HttpRequestTest {
         assertThat(response.body).contains("A front-end example page for the project")
     }
 
-    //@Test
+    @Test
     fun `redirectTo returns a redirect when the key exists`() {
         val target = shortUrl("http://example.com/").headers.location
         require(target != null)
@@ -65,7 +65,7 @@ class HttpRequestTest {
         assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "click")).isEqualTo(1)
     }
 
-    //@Test
+    @Test
     fun `redirectTo returns a not found when the key does not exist`() {
         val response = restTemplate.getForEntity("http://localhost:$port/f684a3c4", String::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
@@ -73,7 +73,7 @@ class HttpRequestTest {
         assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "click")).isEqualTo(0)
     }
 
-    //@Test
+    @Test
     fun `creates returns a basic redirect if it can compute a hash`() {
         val response = shortUrl("http://example.com/")
 
@@ -85,13 +85,14 @@ class HttpRequestTest {
         assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "click")).isEqualTo(0)
     }
 
-    //@Test
+    @Test
     fun `creates returns bad request if it can't compute a hash`() {
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
 
         val data: MultiValueMap<String, String> = LinkedMultiValueMap()
         data["url"] = "ftp://example.com/"
+        data["customWord"] = ""
 
         val response = restTemplate.postForEntity(
             "http://localhost:$port/api/link",
@@ -111,6 +112,7 @@ class HttpRequestTest {
 
         val data: MultiValueMap<String, String> = LinkedMultiValueMap()
         data["url"] = url
+        data["customWord"] = ""
 
         return restTemplate.postForEntity(
             "http://localhost:$port/api/link",
