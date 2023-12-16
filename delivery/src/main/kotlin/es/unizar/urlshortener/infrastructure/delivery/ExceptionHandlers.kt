@@ -39,6 +39,7 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     @ExceptionHandler(value = [ShortUrlNotFoundException::class])
     @ResponseStatus(HttpStatus.NOT_FOUND)
     fun shortUrlNotFound(ex: ShortUrlNotFoundException) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
+
     @ExceptionHandler(value = [UrlNotReachableException::class])
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun urlNotReachable(ex: UrlNotReachableException) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)

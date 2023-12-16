@@ -13,6 +13,7 @@ dependencies {
     implementation("com.google.guava:guava:${Version.GUAVA}")
     implementation ("org.springframework.boot:spring-boot-starter-actuator")
     implementation(project(mapOf("path" to ":repositories")))
+    implementation("io.swagger.core.v3:swagger-annotations:2.2.19")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.mockito.kotlin:mockito-kotlin:${Version.MOCKITO}")

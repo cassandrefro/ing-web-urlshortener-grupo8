@@ -9,8 +9,15 @@ import es.unizar.urlshortener.core.usecases.QRCodeUseCase
 import es.unizar.urlshortener.core.ShortUrlNotFoundException
 import es.unizar.urlshortener.core.QrCodeNotEnabledException
 import es.unizar.urlshortener.core.ShortUrlRepositoryService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.CacheControl
@@ -94,6 +101,7 @@ const val INTERSTITIAL_CACHE_HOURS: Long = 12
  *
  * **Note**: Spring Boot is able to discover this [RestController] without further configuration.
  */
+@Tag(name = "URL-Shortener", description = "URL-Shortener API")
 @RestController
 class UrlShortenerControllerImpl(
     val redirectUseCase: RedirectUseCase,
@@ -103,10 +111,18 @@ class UrlShortenerControllerImpl(
     val shortUrlRepository: ShortUrlRepositoryService
 ) : UrlShortenerController {
     class InterstitialRedirectException(id: String) : Exception(id)
-    val logger = LoggerFactory.getLogger(UrlShortenerController::class.java)
+    val logger : Logger = LoggerFactory.getLogger(UrlShortenerController::class.java)
 
+    @Operation(
+        summary = "Redirect to a specified URI identified by the parameter id",
+        description = "If the URI shortened exists and the redirection is possible, " +
+                "if there is no interstitial, it will return a Temporal Redirect code (307) " +
+                "and into the Location Header the location of the destiny URI"
+    )
+    @ApiResponse(responseCode = "307")
     @GetMapping("/{id:(?!api|index).*}")
-    override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Unit> {
+    override fun redirectTo(@Parameter(description = "The id of idk") @PathVariable id: String, request: HttpServletRequest):
+            ResponseEntity<Unit> {
         logger.info("Endpoint: /{id:(?!api|index).*}")
         val (redirection, banner) = redirectUseCase.redirectTo(id)
         logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
@@ -116,16 +132,16 @@ class UrlShortenerControllerImpl(
         return ResponseEntity<Unit>(h, HttpStatus.valueOf(redirection.mode))
     }
 
-    @ResponseBody
     @ExceptionHandler(value = [InterstitialRedirectException::class])
     @ResponseStatus(HttpStatus.OK)
+    @ApiResponse(useReturnTypeSchema = false, responseCode = "200", description = "HTML for the interstitial page that automatically redirect " +
+            "to the destiny URI after 5 seconds")
     override fun redirectToInterstitial(ex: InterstitialRedirectException, request: HttpServletRequest,
                                         response: HttpServletResponse) : ModelAndView {
         logger.info("ExceptionHandler: InterstitialRedirectException with ${ex.message}")
         val modelAndView = ModelAndView()
         modelAndView.viewName = "interstitial"
         modelAndView.addObject("id", ex.message)
-        //modelAndView.addObject("url", "ws://localhost:8080/ws/")
         val completeUrl = ex.message?.let { request.requestURL.toString().replace("http://", "ws://").replace(it, "") }
         modelAndView.addObject("url", completeUrl + "ws/")
         val headerValue = CacheControl.maxAge(INTERSTITIAL_CACHE_HOURS, TimeUnit.HOURS).headerValue
@@ -133,6 +149,11 @@ class UrlShortenerControllerImpl(
         return modelAndView
     }
 
+    @Operation(
+        summary = "Create a shortened URI",
+        description = "idk idk"
+    )
+    @ApiResponse(responseCode = "200", content = [Content(schema = Schema(implementation = ShortUrlDataOut::class), mediaType = "application/json")])
     @PostMapping("/api/link", consumes = [MediaType.APPLICATION_FORM_URLENCODED_VALUE])
     override fun shortener(data: ShortUrlDataIn, request: HttpServletRequest): ResponseEntity<ShortUrlDataOut> {
         logger.info("Endpoint: /api/link")
@@ -163,8 +184,12 @@ class UrlShortenerControllerImpl(
         }
     }
 
+    @Operation(
+        summary = "Create a QR code that redirect to a specified URI identified by the parameter id",
+        description = "Idk idk"
+    )
     @GetMapping("/{id}/qr", produces = [MediaType.IMAGE_PNG_VALUE])
-    override fun getQr(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray> {
+    override fun getQr(@Parameter(description = "The id of idk") @PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray> {
         //If the id is not in the db, return 404
         val shortUrl = shortUrlRepository.findByKey(id) ?: throw ShortUrlNotFoundException(id)
 
@@ -175,7 +200,7 @@ class UrlShortenerControllerImpl(
 
         val url = linkTo<UrlShortenerControllerImpl> { redirectTo(id, request) }.toUri()
         //val qrCodeUrl = request.requestURL.toString().replace("/qr", "")
-        var qrCodeImage = qrCodeUseCase.generateQRCode(url.toString())
+        val qrCodeImage = qrCodeUseCase.generateQRCode(url.toString())
         val h = HttpHeaders()
         h.contentType = MediaType.IMAGE_PNG
         return ResponseEntity(qrCodeImage, h, HttpStatus.OK)
