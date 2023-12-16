@@ -6,10 +6,12 @@ class InvalidUrlException(url: String) : Exception("[$url] does not follow a sup
 
 class RedirectionNotFound(key: String) : Exception("[$key] is not known")
 
-class RedirectUnsafeException : Exception("URI is not safe")
+/*class RedirectUnsafeException : Exception("URI is not safe")
 
 class RedirectionNotValidatedException(refillTime: Long): Exception("URI has not been validated yet") {
     val refillTime : Long = refillTime
-}
+}*/
 
-class QrCodeNotFoundException : Exception("QR code has not been generated yet")
+class QrCodeNotEnabledException(key: String) : Exception("[$key] does not have a QR code")
+
+class ShortUrlNotFoundException(key: String) : Exception("[$key] is not known")

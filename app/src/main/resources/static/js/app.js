@@ -3,10 +3,7 @@ $(document).ready(
         $("#shortener").submit(
             function (event) {
                 event.preventDefault();
-                var qr = $("#qr").is(":checked");
                 var formData = $(this).serializeArray();
-                // Manually add the 'qr' value to the serialized data
-                formData.push({name: "qr", value: qr});
                 $.ajax({
                     type: "POST",
                     url: "/api/link",

@@ -23,12 +23,20 @@ class QRCodeUseCaseImpl(
     private val shortUrlRepository: ShortUrlRepositoryService
 ) : QRCodeUseCase  {
     override fun generateQRCode(url: String, width: Int, height: Int): ByteArray {
-        // url has format http://localhost:8080/key
-        val key = url.split("/").last()
+        // url has format http://localhost:8080/id  id can be a hash or a customWord
+        val id = url.split("/").last()
 
-        val shortUrl = shortUrlRepository.findByKey(key)
+        val shortUrl = shortUrlRepository.findByKey(id)
         println("shortUrl: $shortUrl")
+
+        /*if (shortUrl == null) {
+            throw QrCodeNotFoundException(url)
+        }
         
+        if (!shortUrl.properties.qr) {
+            throw QrCodeNotEnabledException(url)
+        }*/
+
         val qrCodeWriter = QRCodeWriter()
         val bitMatrix = qrCodeWriter.encode(url, BarcodeFormat.QR_CODE, width, height)
         

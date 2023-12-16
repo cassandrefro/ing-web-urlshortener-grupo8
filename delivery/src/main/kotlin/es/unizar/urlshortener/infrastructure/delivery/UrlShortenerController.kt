@@ -6,6 +6,8 @@ import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
 import es.unizar.urlshortener.core.usecases.QRCodeUseCase
+import es.unizar.urlshortener.core.ShortUrlNotFoundException
+import es.unizar.urlshortener.core.QrCodeNotEnabledException
 import es.unizar.urlshortener.core.ShortUrlRepositoryService
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.hateoas.server.mvc.linkTo
@@ -53,7 +55,7 @@ interface UrlShortenerController {
 data class ShortUrlDataIn(
     val url: String,
     val sponsor: String? = null,
-    val qr: Boolean? = null
+    val qr: Boolean = false
 )
 
 /**
@@ -62,7 +64,7 @@ data class ShortUrlDataIn(
 data class ShortUrlDataOut(
     val url: URI? = null,
     val properties: Map<String, Any> = emptyMap(),
-    val qr: String? = null
+    val qr: String
 )
 
 /**
@@ -101,7 +103,7 @@ class UrlShortenerControllerImpl(
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
-            val qrUrl = if (data.qr) "$url/qr" else null 
+            val qrUrl = if(data.qr) "$url/qr" else ""
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
@@ -115,13 +117,16 @@ class UrlShortenerControllerImpl(
     @GetMapping("/{id}/qr", produces = [MediaType.IMAGE_PNG_VALUE])
     override fun getQr(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray> {
         //If the id is not in the db, return 404
-        val shortUrl = shortUrlRepository.findByKey(id) ?: throw QrCodeNotFoundException(id)
+        val shortUrl = shortUrlRepository.findByKey(id) ?: throw ShortUrlNotFoundException(id)
 
         //If the id is in the db but the qr property is false, return 404
+        if (shortUrl.properties.qr != true) {
+            throw QrCodeNotEnabledException(id)
+        }
 
-        //val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it, null) }.toUri()
-        val completeUrl = request.requestURL.toString().replace("/qr", "")
-        var qrCodeImage = qrCodeUseCase.generateQRCode(completeUrl)
+        val url = linkTo<UrlShortenerControllerImpl> { redirectTo(id, request) }.toUri()
+        //val qrCodeUrl = request.requestURL.toString().replace("/qr", "")
+        var qrCodeImage = qrCodeUseCase.generateQRCode(url.toString())
         val h = HttpHeaders()
         h.contentType = MediaType.IMAGE_PNG
         return ResponseEntity(qrCodeImage, h, HttpStatus.OK)

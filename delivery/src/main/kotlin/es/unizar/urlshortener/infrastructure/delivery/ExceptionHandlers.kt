@@ -2,6 +2,8 @@ package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.InvalidUrlException
 import es.unizar.urlshortener.core.RedirectionNotFound
+import es.unizar.urlshortener.core.ShortUrlNotFoundException
+import es.unizar.urlshortener.core.QrCodeNotEnabledException
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -23,6 +25,16 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     @ExceptionHandler(value = [RedirectionNotFound::class])
     @ResponseStatus(HttpStatus.NOT_FOUND)
     fun redirectionNotFound(ex: RedirectionNotFound) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
+
+    @ResponseBody
+    @ExceptionHandler(value = [QrCodeNotEnabledException::class])
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    fun qrCodeNotEnabled(ex: QrCodeNotEnabledException) = ErrorMessage(HttpStatus.FORBIDDEN.value(), ex.message)
+
+    @ResponseBody
+    @ExceptionHandler(value = [ShortUrlNotFoundException::class])
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun shortUrlNotFound(ex: ShortUrlNotFoundException) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
 }
 
 data class ErrorMessage(
