@@ -45,6 +45,9 @@ class UrlShortenerControllerTest {
     @MockBean
     private lateinit var createShortUrlUseCase: CreateShortUrlUseCase
 
+    /*@MockBean
+    private lateinit var qrCodeUseCase: QRCodeUseCase*/
+
     @MockBean
     private lateinit var shortUrlRepositoryService: ShortUrlRepositoryService
 
@@ -143,6 +146,46 @@ class UrlShortenerControllerTest {
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.statusCode").value(400))
     }
+
+
+    @Disabled
+    @Test
+    fun `getQr returns a valid QR if the hash exists`() {
+        given(
+            createShortUrlUseCase.create(
+                url = "http://example.com/",
+                data = ShortUrlProperties(
+                    ip = "127.0.0.1",
+                    qr = true
+                )
+            )
+        ).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/")))
+
+        given(
+            qrCodeUseCase.generateQRCode("http://localhost/f684a3c4")
+        ).willReturn(ByteArray(0))
+        
+        mockMvc.perform(
+            post("/api/link")
+                .param("url", "http://example.com/")
+                .param("qr", "true")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+        )
+            .andDo(print())
+            .andExpect(status().isCreated)
+            .andExpect(redirectedUrl("http://localhost/f684a3c4"))
+            .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
+            
+        verify(qrCodeUseCase).generateQRCode("http://localhost/f684a3c4")
+
+        mockMvc.perform(
+            get("/f684a3c4/qr", "f684a3c4")
+        )
+            .andDo(print())
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.IMAGE_PNG))  
+    }
+
     
     @Test
     fun `creates returns a redirect with interstitial if it's asked for it`() {
@@ -171,6 +214,24 @@ class UrlShortenerControllerTest {
             .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
             .andExpect(jsonPath("$.properties.interstitial").value(true))
     }
+
+    @Disabled
+    @Test
+    fun `getQr returns not found if the hash does not exist`() {
+        given(
+            qrCodeUseCase.generateQRCode("http://localhost/f684a3c5")
+        ).willAnswer { throw QrCodeNotFoundException() }
+
+        mockMvc.perform(
+            get("/f684a3c5/qr", "f684a3c5")
+        )
+            .andDo(print())
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.statusCode").value(404))
+        
+        verify(qrCodeUseCase, never()).generateQRCode("http://localhost/f684a3c5")
+    }     
+            
 
     @Test
     fun `creates returns bad request if it can't compute an already used custom word`() {

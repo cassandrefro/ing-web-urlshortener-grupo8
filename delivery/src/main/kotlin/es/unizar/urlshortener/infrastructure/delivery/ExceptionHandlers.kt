@@ -2,6 +2,8 @@ package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.InvalidUrlException
 import es.unizar.urlshortener.core.RedirectionNotFound
+import es.unizar.urlshortener.core.ShortUrlNotFoundException
+import es.unizar.urlshortener.core.QrCodeNotEnabledException
 import es.unizar.urlshortener.core.RedirectionNotReachableException
 import es.unizar.urlshortener.core.UrlNotReachableException
 import es.unizar.urlshortener.core.InvalidCustomWordException
@@ -29,6 +31,14 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     fun redirectionNotFound(ex: RedirectionNotFound) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
 
     @ResponseBody
+    @ExceptionHandler(value = [QrCodeNotEnabledException::class])
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    fun qrCodeNotEnabled(ex: QrCodeNotEnabledException) = ErrorMessage(HttpStatus.FORBIDDEN.value(), ex.message)
+
+    @ResponseBody
+    @ExceptionHandler(value = [ShortUrlNotFoundException::class])
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun shortUrlNotFound(ex: ShortUrlNotFoundException) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
     @ExceptionHandler(value = [UrlNotReachableException::class])
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun urlNotReachable(ex: UrlNotReachableException) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)

@@ -3,7 +3,9 @@
 package es.unizar.urlshortener.core.usecases
 
 import es.unizar.urlshortener.core.*
+import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import kotlinx.coroutines.*
+
 
 /**
  * Given an url returns the key that is used to create a short URL.
@@ -57,6 +59,7 @@ class CreateShortUrlUseCaseImpl(
                     safe = data.safe,
                     ip = data.ip,
                     sponsor = data.sponsor,
+                    qr = data.qr,
                     interstitial = data.interstitial
                 )
             )
