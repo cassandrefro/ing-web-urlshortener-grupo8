@@ -56,7 +56,7 @@ interface UrlShortenerController {
      *
      * **Note**: Delivery of use case [QRCodeUseCase].
      */
-    fun getQr(id: String, request: HttpServletRequest): ResponseEntity<ByteArray>
+    fun getQr(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray>
 
     /**
      * Exception handler for a redirection with interstitial.
@@ -73,7 +73,7 @@ interface UrlShortenerController {
 data class ShortUrlDataIn(
     val url: String,
     val sponsor: String? = null,
-    val qr: Boolean = false
+    val qr: Boolean = false,
     val customWord: String,
     val interstitial: Boolean? = null
 )
@@ -84,7 +84,7 @@ data class ShortUrlDataIn(
 data class ShortUrlDataOut(
     val url: URI? = null,
     val properties: Map<String, Any> = emptyMap(),
-    val qr: String
+    val qr: String? = ""
 )
 
 const val INTERSTITIAL_CACHE_HOURS: Long = 12
@@ -150,7 +150,7 @@ class UrlShortenerControllerImpl(
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
-            val qrUrl = if(data.qr) "$url/qr" else ""
+            val qrUrl = if (data.qr) "$url/qr" else ""
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
@@ -161,6 +161,7 @@ class UrlShortenerControllerImpl(
             )
             return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)
         }
+    }
 
     @GetMapping("/{id}/qr", produces = [MediaType.IMAGE_PNG_VALUE])
     override fun getQr(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray> {
@@ -168,7 +169,7 @@ class UrlShortenerControllerImpl(
         val shortUrl = shortUrlRepository.findByKey(id) ?: throw ShortUrlNotFoundException(id)
 
         //If the id is in the db but the qr property is false, return 404
-        if (shortUrl.properties.qr != true) {
+        if (!shortUrl.properties.qr) {
             throw QrCodeNotEnabledException(id)
         }
 
@@ -178,27 +179,5 @@ class UrlShortenerControllerImpl(
         val h = HttpHeaders()
         h.contentType = MediaType.IMAGE_PNG
         return ResponseEntity(qrCodeImage, h, HttpStatus.OK)
-
-        /*if(shortUrl == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-        } else {
-            //if(shortUrl.properties.qr == false || shortUrl.properties.qr == null) {
-              //  println("QR code not found")
-                //return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-           // } else {
-                //val baseUrl = request.requestURL.substring(0, request.requestURL.indexOf(request.requestURI))
-                //val shortenedUrl = baseUrl + "/" + id
-            val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it, null) }.toUri()
-
-                val completeUrl = request.requestURL.toString().replace("/qr", "")
-
-                var qrCodeImage = qrCodeUseCase.generateQRCode(completeUrl)
-                //val headers = HttpHeaders().apply { contentType = MediaType.IMAGE_PNG }
-                val h = HttpHeaders()
-                h.contentType = MediaType.IMAGE_PNG
-                return ResponseEntity(qrCodeImage, h, HttpStatus.OK)
-           // }
-        }  */ 
-
     }
 }

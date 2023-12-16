@@ -3,11 +3,8 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.*
-import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
-import es.unizar.urlshortener.core.usecases.LogClickUseCase
-import es.unizar.urlshortener.core.usecases.Redirect
-import es.unizar.urlshortener.core.usecases.RedirectUseCase
 import es.unizar.urlshortener.core.CustomWordService
+import es.unizar.urlshortener.core.usecases.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
@@ -45,8 +42,8 @@ class UrlShortenerControllerTest {
     @MockBean
     private lateinit var createShortUrlUseCase: CreateShortUrlUseCase
 
-    /*@MockBean
-    private lateinit var qrCodeUseCase: QRCodeUseCase*/
+    @MockBean
+    private lateinit var qrCodeUseCase: QRCodeUseCase
 
     @MockBean
     private lateinit var shortUrlRepositoryService: ShortUrlRepositoryService
@@ -148,7 +145,7 @@ class UrlShortenerControllerTest {
     }
 
 
-    @Disabled
+
     @Test
     fun `getQr returns a valid QR if the hash exists`() {
         given(
@@ -157,9 +154,14 @@ class UrlShortenerControllerTest {
                 data = ShortUrlProperties(
                     ip = "127.0.0.1",
                     qr = true
-                )
+                ),
+                customWord = ""
             )
         ).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/")))
+
+        given(
+            shortUrlRepositoryService.findByKey("f684a3c4")
+        ).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/"), properties = ShortUrlProperties(qr = true)))
 
         given(
             qrCodeUseCase.generateQRCode("http://localhost/f684a3c4")
@@ -169,21 +171,23 @@ class UrlShortenerControllerTest {
             post("/api/link")
                 .param("url", "http://example.com/")
                 .param("qr", "true")
+                .param("customWord", "")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
         )
             .andDo(print())
             .andExpect(status().isCreated)
             .andExpect(redirectedUrl("http://localhost/f684a3c4"))
             .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
-            
-        verify(qrCodeUseCase).generateQRCode("http://localhost/f684a3c4")
+
 
         mockMvc.perform(
-            get("/f684a3c4/qr", "f684a3c4")
+            get("/f684a3c4/qr")
         )
             .andDo(print())
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.IMAGE_PNG))  
+            .andExpect(content().contentType(MediaType.IMAGE_PNG))
+
+        verify(qrCodeUseCase).generateQRCode("http://localhost/f684a3c4")
     }
 
     
@@ -215,12 +219,11 @@ class UrlShortenerControllerTest {
             .andExpect(jsonPath("$.properties.interstitial").value(true))
     }
 
-    @Disabled
     @Test
     fun `getQr returns not found if the hash does not exist`() {
         given(
             qrCodeUseCase.generateQRCode("http://localhost/f684a3c5")
-        ).willAnswer { throw QrCodeNotFoundException() }
+        ).willAnswer { throw QrCodeNotEnabledException("f684a3c5") }
 
         mockMvc.perform(
             get("/f684a3c5/qr", "f684a3c5")
