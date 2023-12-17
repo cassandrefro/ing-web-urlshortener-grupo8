@@ -81,7 +81,7 @@ data class ShortUrlDataIn(
     val url: String,
     val sponsor: String? = null,
     val qr: Boolean? = false,
-    val customWord: String,
+    val customWord: String? = "",
     val interstitial: Boolean? = null
 )
 
@@ -165,7 +165,7 @@ class UrlShortenerControllerImpl(
                 qr = data.qr == true,
                 interstitial = data.interstitial
             ),
-            customWord = data.customWord
+            customWord = data.customWord.orEmpty()
         ).let {
             logger.info("Created shortUrl")
             val h = HttpHeaders()
