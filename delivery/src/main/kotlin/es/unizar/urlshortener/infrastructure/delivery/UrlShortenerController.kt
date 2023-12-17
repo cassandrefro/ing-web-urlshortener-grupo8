@@ -80,7 +80,7 @@ interface UrlShortenerController {
 data class ShortUrlDataIn(
     val url: String,
     val sponsor: String? = null,
-    val qr: Boolean = false,
+    val qr: Boolean? = false,
     val customWord: String,
     val interstitial: Boolean? = null
 )
@@ -162,7 +162,7 @@ class UrlShortenerControllerImpl(
             data = ShortUrlProperties(
                 ip = request.remoteAddr,
                 sponsor = data.sponsor,
-                qr = data.qr,
+                qr = data.qr == true,
                 interstitial = data.interstitial
             ),
             customWord = data.customWord
@@ -171,7 +171,7 @@ class UrlShortenerControllerImpl(
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
-            val qrUrl = if (data.qr) "$url/qr" else ""
+            val qrUrl = if (data.qr == true) "$url/qr" else ""
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
