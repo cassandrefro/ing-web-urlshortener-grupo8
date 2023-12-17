@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.links.Link
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -29,7 +28,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.PostMapping
@@ -127,8 +125,8 @@ class UrlShortenerControllerImpl(
     )
     @ApiResponse(responseCode = "307")
     @GetMapping("/{id:(?!api|index).*}")
-    override fun redirectTo(@Parameter(description = "Id that identifies an URI") @PathVariable id: String, request: HttpServletRequest):
-            ResponseEntity<Unit> {
+    override fun redirectTo(@Parameter(description = "Id that identifies an URI") @PathVariable id: String,
+                            request: HttpServletRequest): ResponseEntity<Unit> {
         logger.info("Endpoint: /{id:(?!api|index).*}")
         val (redirection, banner) = redirectUseCase.redirectTo(id)
         logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
@@ -205,7 +203,8 @@ class UrlShortenerControllerImpl(
                 "If the shortened URI is not reachable it will return a Bad Request code (400)",
     )
     @GetMapping("/{id}/qr", produces = [MediaType.IMAGE_PNG_VALUE])
-    override fun getQr(@Parameter(description = "Id that identifies an URI") @PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray> {
+    override fun getQr(@Parameter(description = "Id that identifies an URI") @PathVariable id: String,
+                       request: HttpServletRequest): ResponseEntity<ByteArray> {
         //If the id is not in the db, return 404
         val shortUrl = shortUrlRepository.findByKey(id) ?: throw ShortUrlNotFoundException(id)
 

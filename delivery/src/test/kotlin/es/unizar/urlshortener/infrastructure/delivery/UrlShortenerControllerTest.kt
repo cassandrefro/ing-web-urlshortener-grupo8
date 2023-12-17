@@ -3,9 +3,7 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.*
-import es.unizar.urlshortener.core.CustomWordService
 import es.unizar.urlshortener.core.usecases.*
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.never
@@ -161,7 +159,8 @@ class UrlShortenerControllerTest {
 
         given(
             shortUrlRepositoryService.findByKey("f684a3c4")
-        ).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/"), properties = ShortUrlProperties(qr = true)))
+        ).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/"),
+            properties = ShortUrlProperties(qr = true)))
 
         given(
             qrCodeUseCase.generateQRCode("http://localhost/f684a3c4")
