@@ -3,9 +3,7 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.*
-import es.unizar.urlshortener.core.CustomWordService
 import es.unizar.urlshortener.core.usecases.*
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.never
@@ -161,7 +159,8 @@ class UrlShortenerControllerTest {
 
         given(
             shortUrlRepositoryService.findByKey("f684a3c4")
-        ).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/"), properties = ShortUrlProperties(qr = true)))
+        ).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/"),
+            properties = ShortUrlProperties(qr = true)))
 
         given(
             qrCodeUseCase.generateQRCode("http://localhost/f684a3c4")
@@ -286,36 +285,4 @@ class UrlShortenerControllerTest {
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.statusCode").value(400))
     }
-
-    @Disabled
-    @Test
-    fun `check if custom metrics are enabled`() {
-        mockMvc.perform(
-            get("/actuator")
-        )
-            .andDo(print())
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.names").exists())
-            .andExpect(jsonPath("$.names.redirections-executed-counter").exists())
-    }
-
-    @Disabled
-    @Test
-    fun `check if urls shortened counter counts`() {
-        given(
-            shortUrlRepositoryService.count()
-        ).willReturn(1)
-
-        mockMvc.perform(
-            post("/api/stats/metrics")
-                .param("url", "http://example.com/")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-        )
-            .andDo(print())
-            .andExpect(status().isCreated)
-            .andExpect(redirectedUrl("http://localhost/f684a3c4"))
-            .andExpect(jsonPath("$.url").value("http://localhost/f684a3c4"))
-    }
 }
-
-

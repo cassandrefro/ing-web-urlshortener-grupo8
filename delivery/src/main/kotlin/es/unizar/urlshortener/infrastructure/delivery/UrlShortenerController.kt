@@ -28,7 +28,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.PostMapping
@@ -80,8 +79,8 @@ interface UrlShortenerController {
 data class ShortUrlDataIn(
     val url: String,
     val sponsor: String? = null,
-    val qr: Boolean = false,
-    val customWord: String,
+    val qr: Boolean? = false,
+    val customWord: String? = "",
     val interstitial: Boolean? = null
 )
 
@@ -115,14 +114,19 @@ class UrlShortenerControllerImpl(
 
     @Operation(
         summary = "Redirect to a specified URI identified by the parameter id",
-        description = "If the URI shortened exists and the redirection is possible, " +
+        description = "If the shortened URI exists and the redirection is possible, " +
                 "if there is no interstitial, it will return a Temporal Redirect code (307) " +
-                "and into the Location Header the location of the destiny URI"
+                "and into the Location Header the location of the destiny URI, " +
+                "if there is interstitial, it will return a OK code (200) " +
+                "an interstitial HTML, the redirection will be made by te user agent using the" +
+                " information located at the HTML\n\n" +
+                "If the shortened URI does not exist it will return a Not Found code (404)\n\n" +
+                "If the shortened URI is not reachable it will return a Bad Request code (400)",
     )
     @ApiResponse(responseCode = "307")
     @GetMapping("/{id:(?!api|index).*}")
-    override fun redirectTo(@Parameter(description = "The id of idk") @PathVariable id: String, request: HttpServletRequest):
-            ResponseEntity<Unit> {
+    override fun redirectTo(@Parameter(description = "Id that identifies an URI") @PathVariable id: String,
+                            request: HttpServletRequest): ResponseEntity<Unit> {
         logger.info("Endpoint: /{id:(?!api|index).*}")
         val (redirection, banner) = redirectUseCase.redirectTo(id)
         logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
@@ -134,7 +138,7 @@ class UrlShortenerControllerImpl(
 
     @ExceptionHandler(value = [InterstitialRedirectException::class])
     @ResponseStatus(HttpStatus.OK)
-    @ApiResponse(useReturnTypeSchema = false, responseCode = "200", description = "HTML for the interstitial page that automatically redirect " +
+    @ApiResponse(responseCode = "200", description = "HTML for the interstitial page that automatically redirect " +
             "to the destiny URI after 5 seconds")
     override fun redirectToInterstitial(ex: InterstitialRedirectException, request: HttpServletRequest,
                                         response: HttpServletResponse) : ModelAndView {
@@ -151,10 +155,17 @@ class UrlShortenerControllerImpl(
 
     @Operation(
         summary = "Create a shortened URI",
-        description = "idk idk"
+        description = "If the request is completed successfully  it will return a Created code (201) " +
+                ", into the Location header the location of the shortened URI created" +
+                ", with a Content-Type header = \"application/json\" and with information in JSON" +
+                " about the shortened URI created\n\n" +
+                "If the shortened URI can not be create it will return a Bad Request code (400), with a " +
+                "Content-Type header = \"application/json\" and with information in JSON explaining the error"
     )
-    @ApiResponse(responseCode = "200", content = [Content(schema = Schema(implementation = ShortUrlDataOut::class), mediaType = "application/json")])
-    @PostMapping("/api/link", consumes = [MediaType.APPLICATION_FORM_URLENCODED_VALUE])
+    @ApiResponse(responseCode = "200", content = [Content(schema = Schema(implementation = ShortUrlDataOut::class),
+        mediaType = "application/json")])
+    @PostMapping("/api/link", consumes = [MediaType.APPLICATION_FORM_URLENCODED_VALUE],
+        produces = [MediaType.APPLICATION_JSON_VALUE])
     override fun shortener(data: ShortUrlDataIn, request: HttpServletRequest): ResponseEntity<ShortUrlDataOut> {
         logger.info("Endpoint: /api/link")
         createShortUrlUseCase.create(
@@ -162,16 +173,16 @@ class UrlShortenerControllerImpl(
             data = ShortUrlProperties(
                 ip = request.remoteAddr,
                 sponsor = data.sponsor,
-                qr = data.qr,
+                qr = data.qr == true,
                 interstitial = data.interstitial
             ),
-            customWord = data.customWord
+            customWord = data.customWord.orEmpty()
         ).let {
             logger.info("Created shortUrl")
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
-            val qrUrl = if (data.qr) "$url/qr" else ""
+            val qrUrl = if (data.qr == true) "$url/qr" else ""
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
@@ -186,10 +197,14 @@ class UrlShortenerControllerImpl(
 
     @Operation(
         summary = "Create a QR code that redirect to a specified URI identified by the parameter id",
-        description = "Idk idk"
+        description = "If the shortened URI exists and the redirection is possible, " +
+                "it will return an OK code (200) with Content-Type=\"image/png\" and the appropriate QR\n\n" +
+                "If the shortened URI does not exist it will return a Not Found code (404)\n\n" +
+                "If the shortened URI is not reachable it will return a Bad Request code (400)",
     )
     @GetMapping("/{id}/qr", produces = [MediaType.IMAGE_PNG_VALUE])
-    override fun getQr(@Parameter(description = "The id of idk") @PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray> {
+    override fun getQr(@Parameter(description = "Id that identifies an URI") @PathVariable id: String,
+                       request: HttpServletRequest): ResponseEntity<ByteArray> {
         //If the id is not in the db, return 404
         val shortUrl = shortUrlRepository.findByKey(id) ?: throw ShortUrlNotFoundException(id)
 
