@@ -16,7 +16,6 @@ class RedirectionsExecutedCountController(registry: MeterRegistry, val clickEnti
 
     fun getCount() = cacheValue
 
-    //@Async???????
     @Scheduled(fixedDelay = 10000)
     fun updateCount(){
         cacheValue = clickEntityRepository.count()
@@ -34,7 +33,6 @@ class UrlsShortenedCountController(registry: MeterRegistry, val shortUrlEntityRe
 
     fun getCount() = cacheValue
 
-    //@Async???????
     @Scheduled(fixedDelay = 10000)
     fun updateCount(){
         cacheValue = shortUrlEntityRepository.count()

@@ -106,6 +106,24 @@ class HttpRequestTest {
         assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "click")).isEqualTo(0)
     }
 
+    @Test
+    fun `custom metrics page works`() {
+        val response = restTemplate.getForEntity("http://localhost:$port/api/stats/metrics", String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    }
+
+    @Test
+    fun `urls-shortened-counter custom metric endpoint works`() {
+        val response = restTemplate.getForEntity("http://localhost:$port/api/stats/metrics/urls-shortened-counter", String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    }
+
+    @Test
+    fun `redirections-executed-counter custom metric endpoint works`() {
+        val response = restTemplate.getForEntity("http://localhost:$port/api/stats/metrics/redirections-executed-counter", String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    }
+
     private fun shortUrl(url: String): ResponseEntity<ShortUrlDataOut> {
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
