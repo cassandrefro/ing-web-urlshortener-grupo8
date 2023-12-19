@@ -27,27 +27,15 @@ class CreateShortUrlUseCaseImpl(
     private val customWordService: CustomWordService
 ) : CreateShortUrlUseCase {
     override fun create(url: String, data: ShortUrlProperties, customWord: String): ShortUrl {
-        //verify if the custom word is valid for an url
-        if (customWord.isNotEmpty() && !customWordService.isValid(customWord)) {
-            throw InvalidCustomWordException(customWord)
-        }
-
-        //verify if the id is in the repository
-        val id: String = hashService.hasUrl(url, customWord)
-        val shortUrl = shortUrlRepository.findByKey(id)
-
-        // if exists
-        if (shortUrl != null) {
-            //verify if the url matches
-            if (shortUrl.redirection.target == url) {
-                return shortUrl
-            } else {
-                // the id custom Word is in the repository but the url is different
-                throw CustomWordInUseException(customWord)
-            }
-        }
         if (validatorService.isValid(url)) {
-            // verify if url is reachable
+            if (customWord.isNotEmpty() && !customWordService.isValid(customWord)) {
+                throw InvalidCustomWordException(customWord)
+            }
+            val id: String = hashService.hasUrl(url, customWord)
+            val shortUrl = shortUrlRepository.findByKey(id)
+            if (shortUrl != null) {
+                throw CustomWordInUseException(id)
+            }
             if (!validatorService.isReachable(url)) {
                 throw UrlNotReachableException(url)
             }
