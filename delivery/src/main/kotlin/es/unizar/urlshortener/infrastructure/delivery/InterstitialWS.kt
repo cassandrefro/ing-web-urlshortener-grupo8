@@ -22,8 +22,10 @@ class SenderWS (private val session: WebSocketSession, private val url: String) 
     override fun run() {
         logger.info("recipient: ${session.id} message: $url")
         Thread.sleep(MS_TO_SEND)
-        session.sendMessage(TextMessage(url))
-        session.close()
+        if (session.isOpen){
+            session.sendMessage(TextMessage(url))
+            session.close()
+        }
     }
 }
 
@@ -35,6 +37,18 @@ class InterstitialWSHandler : TextWebSocketHandler() {
 
     val logger = LoggerFactory.getLogger(InterstitialWSHandler::class.java)
 
+    /**
+     * Handles incoming text messages in the WebSocket session.
+     *
+     * @param session The WebSocket session associated with the received message.
+     * @param message The received [TextMessage] containing the payload.
+     *
+     * This function logs the received message payload using the [logger.info] method.
+     * It then executes a [SenderWS] task on the [taskExecutor], passing the WebSocket [session]
+     * and the target URL obtained by redirecting the payload using [redirectUseCase.redirectTo].
+     * The redirection result is expected to contain a [Redirect] object, and the target URL is extracted
+     * from its [value] property.
+     */
     override fun handleTextMessage(session: WebSocketSession, message: TextMessage) {
         logger.info("WS-Received: ${message.payload}")
         taskExecutor.execute(SenderWS(session, redirectUseCase.redirectTo(message.payload).value.target))

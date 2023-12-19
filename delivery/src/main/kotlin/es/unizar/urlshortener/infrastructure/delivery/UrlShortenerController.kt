@@ -45,12 +45,20 @@ interface UrlShortenerController {
     /**
      * Redirects and logs a short url identified by its [id].
      *
+     * @param id The unique identifier of the short URL to be redirected.
+     * @param request The HTTP servlet request associated with the redirection.
+     * @return A [ResponseEntity] with a unit payload indicating the success of the redirection.
+     *
      * **Note**: Delivery of use cases [RedirectUseCase] and [LogClickUseCase].
      */
     fun redirectTo(id: String, request: HttpServletRequest): ResponseEntity<Unit>
 
     /**
      * Creates a short url from details provided in [data].
+     *
+     * @param data The input data containing details for creating the short URL.
+     * @param request The HTTP servlet request associated with the shortening process.
+     * @return A [ResponseEntity] containing the output data of the created short URL.
      *
      * **Note**: Delivery of use case [CreateShortUrlUseCase].
      */
@@ -60,12 +68,21 @@ interface UrlShortenerController {
 
      * Returns a QR code for the short url identified by its [id].
      *
+     * @param id The unique identifier of the short URL for which a QR code is requested.
+     * @param request The HTTP servlet request associated with the QR code retrieval.
+     * @return A [ResponseEntity] containing a byte array representing the QR code image.
+     *
      * **Note**: Delivery of use case [QRCodeUseCase].
      */
     fun getQr(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<ByteArray>
 
     /**
      * Exception handler for a redirection with interstitial.
+     *
+     * @param ex The exception of type [UrlShortenerControllerImpl.InterstitialRedirectException].
+     * @param request The HTTP servlet request associated with the redirection.
+     * @param response The HTTP servlet response for handling the redirection.
+     * @return A [ModelAndView] representing the view for the interstitial redirection.
      */
     fun redirectToInterstitial(ex: UrlShortenerControllerImpl.InterstitialRedirectException
                                , request: HttpServletRequest, response: HttpServletResponse): ModelAndView
@@ -214,7 +231,6 @@ class UrlShortenerControllerImpl(
         }
 
         val url = linkTo<UrlShortenerControllerImpl> { redirectTo(id, request) }.toUri()
-        //val qrCodeUrl = request.requestURL.toString().replace("/qr", "")
         val qrCodeImage = qrCodeUseCase.generateQRCode(url.toString())
         val h = HttpHeaders()
         h.contentType = MediaType.IMAGE_PNG
