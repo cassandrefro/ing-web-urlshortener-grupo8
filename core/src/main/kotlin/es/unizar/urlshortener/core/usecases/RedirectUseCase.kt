@@ -10,10 +10,12 @@ import es.unizar.urlshortener.core.ValidatorService
 import es.unizar.urlshortener.core.RedirectionNotReachableException
 
 /**
- * Given a key returns a [Redirection] that contains a [URI target][Redirection.target]
- * and an [HTTP redirection mode][Redirection.mode].
+ * Redirects to the target URL associated with the provided key.
  *
- * **Note**: This is an example of functionality.
+ * @param key The unique key associated with the short URL.
+ * @return A [Redirect] object representing the redirection information.
+ * @throws RedirectionNotFound If no redirection is found for the specified key.
+ * @throws RedirectionNotReachableException If the target URL associated with the key is not reachable.
  */
 interface RedirectUseCase {
     fun redirectTo(key: String): Redirect

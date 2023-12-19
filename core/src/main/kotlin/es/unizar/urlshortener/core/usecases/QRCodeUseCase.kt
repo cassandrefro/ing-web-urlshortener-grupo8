@@ -12,7 +12,12 @@ import com.google.zxing.client.j2se.MatrixToImageWriter
 import java.io.ByteArrayOutputStream
 
 /**
- * Given a key returns a QR code that links to the resource passed.
+ * Generates a QR code as a byte array for the given URL with specified width and height.
+ *
+ * @param url The URL to be encoded into the QR code.
+ * @param width The width of the generated QR code.
+ * @param height The height of the generated QR code.
+ * @return A byte array representing the QR code image.
  */
 interface QRCodeUseCase {
     fun generateQRCode(url: String, width: Int = 256, height: Int = 256) : ByteArray

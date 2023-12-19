@@ -11,7 +11,6 @@ import kotlinx.coroutines.*
  * Given an url returns the key that is used to create a short URL.
  * When the url is created optional data may be added.
  *
- * **Note**: This is an example of functionality.
  */
 interface CreateShortUrlUseCase {
     fun create(url: String, data: ShortUrlProperties, customWord: String): ShortUrl

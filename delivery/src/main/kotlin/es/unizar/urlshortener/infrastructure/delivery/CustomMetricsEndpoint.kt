@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.RestController
 
 
-@RestController
 @Component
-class RedirectionsExecutedCountController(registry: MeterRegistry, val clickEntityRepository: ClickRepositoryService) {
+class RedirectionsExecutedCountController(registry: MeterRegistry,
+                                          private final val clickEntityRepository: ClickRepositoryService) {
     private var cacheValue = clickEntityRepository.count()
 
     fun getCount() = cacheValue
@@ -26,9 +26,9 @@ class RedirectionsExecutedCountController(registry: MeterRegistry, val clickEnti
         .register(registry)
 }
 
-@RestController
 @Component
-class UrlsShortenedCountController(registry: MeterRegistry, val shortUrlEntityRepository: ShortUrlRepositoryService) {
+class UrlsShortenedCountController(registry: MeterRegistry,
+                                   private final val shortUrlEntityRepository: ShortUrlRepositoryService) {
     private var cacheValue = shortUrlEntityRepository.count()
 
     fun getCount() = cacheValue
