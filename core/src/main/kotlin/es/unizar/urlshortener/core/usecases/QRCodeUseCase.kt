@@ -6,6 +6,8 @@ import es.unizar.urlshortener.core.*
 import es.unizar.urlshortener.core.ShortUrlRepositoryService
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.google.zxing.client.j2se.MatrixToImageWriter
 import java.io.ByteArrayOutputStream
 
@@ -29,16 +31,13 @@ class QRCodeUseCaseImpl(
         val shortUrl = shortUrlRepository.findByKey(id)
         println("shortUrl: $shortUrl")
 
-        /*if (shortUrl == null) {
-            throw QrCodeNotFoundException(url)
-        }
-        
-        if (!shortUrl.properties.qr) {
-            throw QrCodeNotEnabledException(url)
-        }*/
+        // 30% correction level
+        val hints = mapOf(
+            EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.Q 
+        )
 
         val qrCodeWriter = QRCodeWriter()
-        val bitMatrix = qrCodeWriter.encode(url, BarcodeFormat.QR_CODE, width, height)
+        val bitMatrix = qrCodeWriter.encode(url, BarcodeFormat.QR_CODE, width, height, hints)
         
         val outputStream = ByteArrayOutputStream()
         MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream)

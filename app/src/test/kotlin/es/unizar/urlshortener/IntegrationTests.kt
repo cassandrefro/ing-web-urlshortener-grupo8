@@ -114,13 +114,15 @@ class HttpRequestTest {
 
     @Test
     fun `urls-shortened-counter custom metric endpoint works`() {
-        val response = restTemplate.getForEntity("http://localhost:$port/api/stats/metrics/urls-shortened-counter", String::class.java)
+        val response = restTemplate.getForEntity(
+            "http://localhost:$port/api/stats/metrics/urls-shortened-counter", String::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
     }
 
     @Test
     fun `redirections-executed-counter custom metric endpoint works`() {
-        val response = restTemplate.getForEntity("http://localhost:$port/api/stats/metrics/redirections-executed-counter", String::class.java)
+        val response = restTemplate.getForEntity(
+            "http://localhost:$port/api/stats/metrics/redirections-executed-counter", String::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
     }
 
